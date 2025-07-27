@@ -7,12 +7,6 @@
 #include "MqttStatefulComponent.hpp"
 
 class MqttSwitch : public MqttStatefulComponent<const char*> {
- private:
-  char command_topic[256];
-
- protected:
-  void serialize_state(char* serialized_state_buffer, size_t buffer_size) override;
-
  public:
   static constexpr const char* ON_STATE = "ON";
   static constexpr const char* OFF_STATE = "OFF";
@@ -30,6 +24,12 @@ class MqttSwitch : public MqttStatefulComponent<const char*> {
   void switch_on();
   void switch_off();
   void toggle();
+
+ protected:
+  void serialize_state(char* serialized_state_buffer, size_t buffer_size) override;
+
+ private:
+  char command_topic[256];
 };
 
 #endif

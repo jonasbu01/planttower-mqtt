@@ -8,19 +8,6 @@
 
 template <typename T>
 class MqttStatefulComponent : public MqttComponent {
- protected:
-  T state;
-  virtual void serialize_state(char* serialized_state_buffer, size_t buffer_size) = 0;
-  void send_state(char* state_payload) {
-    if (this->mqtt_client->publish(this->state_topic, state_payload, false)) {
-      Serial.print(this->name);
-      Serial.print(" published state: ");
-      Serial.println(state);
-    } else {
-      Serial.println("Publish state FAILED");
-    }
-  };
-
  public:
   MqttStatefulComponent(
     PubSubClient* mqtt_client,
@@ -35,6 +22,19 @@ class MqttStatefulComponent : public MqttComponent {
     char state_payload[128];
     this->serialize_state(state_payload, 128);
     this->send_state(state_payload);
+  };
+
+ protected:
+  T state;
+  virtual void serialize_state(char* serialized_state_buffer, size_t buffer_size) = 0;
+  void send_state(char* state_payload) {
+    if (this->mqtt_client->publish(this->state_topic, state_payload, false)) {
+      Serial.print(this->name);
+      Serial.print(" published state: ");
+      Serial.println(state);
+    } else {
+      Serial.println("Publish state FAILED");
+    }
   };
 };
 

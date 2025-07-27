@@ -17,15 +17,6 @@ struct MqttCredentials {
 };
 
 class MqttDevice : public MqttEntity {
- private:
-  MqttCredentials* mqtt_credentials;
-  const char* manufacturer;
-  char discovery_topic[256];
-  std::vector<MqttComponent*>* components;
-
-  void configure_client();
-  void connect_client();
-
  public:
   MqttDevice(
     PubSubClient* mqtt_client,
@@ -45,6 +36,15 @@ class MqttDevice : public MqttEntity {
   void reconnect();
   boolean is_connected();
   void send_discovery();
+
+ private:
+  MqttCredentials* mqtt_credentials;
+  const char* manufacturer;
+  char discovery_topic[256];
+  std::vector<MqttComponent*>* components;
+
+  void configure_client();
+  void connect_client();
 };
 
 #endif

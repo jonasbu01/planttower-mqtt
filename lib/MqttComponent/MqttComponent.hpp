@@ -12,6 +12,7 @@ class MqttComponent : public MqttEntity {
     const char* name,
     const char* platform
   ): MqttEntity(mqtt_client, unique_id, name, platform) {}
+
   virtual void append_discovery_config(JsonObject* config) = 0;
 };
 

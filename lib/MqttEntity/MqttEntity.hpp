@@ -6,13 +6,6 @@
 #include "Arduino.h"
 
 class MqttEntity {
- protected:
-  PubSubClient* mqtt_client;
-  const char* name;
-  const char* unique_id;
-  const char* platform;
-  char state_topic[256];
-
  public:
   MqttEntity(
     PubSubClient* mqtt_client,
@@ -27,6 +20,13 @@ class MqttEntity {
     }
 
   const char* get_unique_id();
+
+ protected:
+  PubSubClient* mqtt_client;
+  const char* name;
+  const char* unique_id;
+  const char* platform;
+  char state_topic[256];
 };
 
 #endif

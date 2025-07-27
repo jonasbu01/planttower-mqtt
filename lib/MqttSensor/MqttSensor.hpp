@@ -7,14 +7,6 @@
 #include "MqttStatefulComponent.hpp"
 
 class MqttSensor : public MqttStatefulComponent<float> {
- private:
-  const char* device_class;
-  const char* unit;
-  const char* value_template;
-
- protected:
-  void serialize_state(char* serialized_state_buffer, size_t buffer_size) override;
-
  public:
   MqttSensor(
     PubSubClient* mqtt_client,
@@ -29,6 +21,14 @@ class MqttSensor : public MqttStatefulComponent<float> {
     value_template(value_template) {}
 
   void append_discovery_config(JsonObject* config) override;
+
+ protected:
+  void serialize_state(char* serialized_state_buffer, size_t buffer_size) override;
+
+ private:
+  const char* device_class;
+  const char* unit;
+  const char* value_template;
 };
 
 #endif
