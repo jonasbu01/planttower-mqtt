@@ -1,23 +1,18 @@
-#ifndef MQTTDEVICE
-#define MQTTDEVICE
+#ifndef MQTT_DEVICE
+#define MQTT_DEVICE
 
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
-
 #include <vector>
-
 #include "Arduino.h"
-#include "MqttSensor.hpp"
+#include "MqttEntity.hpp"
+#include "MqttComponent.hpp"
 
-class MqttDevice {
+class MqttDevice : public MqttEntity {
  private:
-  PubSubClient* client;
-  const char* unique_id;
-  const char* name;
   const char* manufacturer;
   char discovery_topic[256];
-  char state_topic[256];
-  std::vector<MqttSensor>* components;
+  std::vector<MqttComponent*>* components;
 
  public:
   MqttDevice(
@@ -25,15 +20,13 @@ class MqttDevice {
     const char* unique_id,
     const char* name,
     const char* manufacturer,
-    std::vector<MqttSensor>* components
-  ): client(client),
-    unique_id(unique_id),
-    name(name),
+    std::vector<MqttComponent*>* components
+  ): MqttEntity(client, unique_id, name, "device"),
     manufacturer(manufacturer),
     components(components) {
-      snprintf(this->discovery_topic, 256, "homeassistant/device/%s/config", unique_id);
-      snprintf(this->state_topic, 256, "homeassistant/device/%s/state", unique_id);
+      snprintf(this->discovery_topic, 256, "homeassistant/%s/%s/config", this->platform, unique_id);
     }
+
   void send_discovery();
 };
 

@@ -1,9 +1,5 @@
 #include "MqttSensor.hpp"
 
-const char* MqttSensor::get_unique_id() {
-  return this->unique_id;
-}
-
 void MqttSensor::append_discovery_config(JsonObject* config) {
   (*config)["platform"] = "sensor";
   (*config)["name"] = this->name;
@@ -11,21 +7,11 @@ void MqttSensor::append_discovery_config(JsonObject* config) {
   (*config)["device_class"] = this->device_class;
   (*config)["state_topic"] = this->state_topic;
   (*config)["unit_of_measurement"] = this->unit;
-  (*config)["value_template"] = this->value_template;;
+  (*config)["value_template"] = this->value_template;
 }
 
-void MqttSensor::send_state(float state) {
+void MqttSensor::serialize_state(char* serialized_state_buffer, size_t buffer_size) {
   JsonDocument payload;
   payload[this->device_class] = state;
-
-  char state_payload[128];
-  serializeJson(payload, state_payload);
-
-  if (this->client->publish(this->state_topic, state_payload, false)) {
-    Serial.print(this->name);
-    Serial.print(" published state: ");
-    Serial.println(state);
-  } else {
-    Serial.println("Publish state FAILED");
-  }
+  serializeJson(payload, serialized_state_buffer, buffer_size);
 }

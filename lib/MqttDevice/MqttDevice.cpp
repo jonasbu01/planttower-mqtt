@@ -5,23 +5,22 @@ void MqttDevice::send_discovery() {
   payload["state_topic"] = this->state_topic;
   payload["qos"] = 2;
 
-  JsonObject device = payload.createNestedObject("dev");
+  JsonObject device = payload["dev"].to<JsonObject>();
   device["ids"] = this->unique_id;
   device["name"] = this->name;
   device["mf"] = "Jonas";
   device["mdl"] = this->name;
 
-  JsonObject origin = payload.createNestedObject("o");
+  JsonObject origin = payload["o"].to<JsonObject>();
   origin["name"] = this->name;
 
-  JsonObject components = payload.createNestedObject("cmps");
-
+  JsonObject components = payload["cmps"].to<JsonObject>();
   for (auto& component : *this->components) {
-    JsonObject comp = components.createNestedObject(component.get_unique_id());
-    component.append_discovery_config(&comp);
+    JsonObject comp = components[component->get_unique_id()].to<JsonObject>();
+    component->append_discovery_config(&comp);
   }
 
-  char payload_buffer[1024];
+  char payload_buffer[2048];
   serializeJsonPretty(payload, Serial);
   serializeJson(payload, payload_buffer);
 

@@ -5,32 +5,56 @@
 #include <vector>
 #include "Secrets.hpp"
 #include "MqttDevice.hpp"
+#include "MqttComponent.hpp"
 #include "MqttSensor.hpp"
+#include "MqttBinarySensor.hpp"
+#include "MqttSwitch.hpp"
 
 const char* clientId = "ESP32_Planttower";
+
 WiFiClient espClient;
 PubSubClient* client = new PubSubClient(espClient);
+
 MqttSensor temperature_sensor(
   client,
-  "aussentemperatur",
+  "outside_temperature",
   "Außentemperatur",
   "temperature",
   "°C",
-  "{{ value_json.temperature}}"
+  "{{ value_json.temperature }}"
 );
-MqttSensor waterlevel_sensor( //neue Klasse BinarySensor
+
+MqttBinarySensor waterlevel_sensor(
   client,
-  "wasserstandgering",
+  "water_level_low",
   "Wasserstand gering",
-  "temperature",
-  "°C",
-  "{{ value_json.temperature}}"
+  "{{ value_json.state }}"
 );
-std::vector<MqttSensor> components = { temperature_sensor, waterlevel_sensor };
+
+MqttBinarySensor error_detected(
+  client,
+  "error_detected",
+  "Fehler erkannt",
+  "{{ value_json.state }}"
+);
+
+MqttSwitch pump(
+  client,
+  "pump",
+  "Pumpe"
+);
+
+std::vector<MqttComponent*> components = {
+  &temperature_sensor,
+  &waterlevel_sensor,
+  &error_detected,
+  &pump,
+};
+
 MqttDevice planttower(
   client,
   "planttower",
-  "Plant Tower", //display name
+  "Plant Tower",
   "Jonas",
   &components
 );
@@ -64,10 +88,11 @@ void mqtt_reconnect() {
 void setup() {
   Serial.begin(115200);
   setup_wifi();
-  //mqtt
-  client->setBufferSize(1024);
+
+  client->setBufferSize(2048);
   client->setServer(mqtt_server, mqtt_port);
   mqtt_reconnect();
+
   planttower.send_discovery();
 }
 
@@ -77,8 +102,10 @@ void loop() {
   }
   client->loop();
 
-  temperature_sensor.send_state(21.0 + (random(0,100)/100.0)); // Sende den aktuellen Zustand des Sensors
-  waterlevel_sensor.send_state(1); // Sende den aktuellen Zustand des Sensors
+  temperature_sensor.set_state(21.0 + (random(0,100)/100.0));
+  waterlevel_sensor.set_state(MqttBinarySensor::ON_STATE);
+  error_detected.set_state(MqttBinarySensor::OFF_STATE);
+  pump.switch_on();
 
-  delay(5000); // alle 5 Sekunden senden
+  delay(5 * 1000);
 }

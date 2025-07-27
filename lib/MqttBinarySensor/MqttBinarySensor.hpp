@@ -1,31 +1,28 @@
-#ifndef MQTT_SENSOR
-#define MQTT_SENSOR
+#ifndef MQTT_BINARY_SENSOR
+#define MQTT_BINARY_SENSOR
 
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
 #include "Arduino.h"
 #include "MqttStatefulComponent.hpp"
 
-class MqttSensor : public MqttStatefulComponent<float> {
+class MqttBinarySensor : public MqttStatefulComponent<const char*> {
  private:
-  const char* device_class;
-  const char* unit;
   const char* value_template;
 
  protected:
   void serialize_state(char* serialized_state_buffer, size_t buffer_size) override;
 
  public:
-  MqttSensor(
+  static constexpr const char* ON_STATE = "ON";
+  static constexpr const char* OFF_STATE = "OFF";
+
+  MqttBinarySensor(
     PubSubClient* client,
     const char* unique_id,
     const char* name,
-    const char* device_class,
-    const char* unit,
     const char* value_template
-  ): MqttStatefulComponent<float>(client, unique_id, name, "sensor"),
-    device_class(device_class),
-    unit(unit),
+  ): MqttStatefulComponent<const char*>(client, unique_id, name, "binary_sensor"),
     value_template(value_template) {}
 
   void append_discovery_config(JsonObject* config) override;
