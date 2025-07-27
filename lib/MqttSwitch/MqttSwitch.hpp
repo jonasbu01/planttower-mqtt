@@ -4,9 +4,9 @@
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
 #include "Arduino.h"
-#include "MqttStatefulComponent.hpp"
+#include "MqttControl.hpp"
 
-class MqttSwitch : public MqttStatefulComponent<const char*> {
+class MqttSwitch : public MqttControl<const char*> {
  public:
   static constexpr const char* ON_STATE = "ON";
   static constexpr const char* OFF_STATE = "OFF";
@@ -15,11 +15,12 @@ class MqttSwitch : public MqttStatefulComponent<const char*> {
     PubSubClient* mqtt_client,
     const char* unique_id,
     const char* name
-  ): MqttStatefulComponent<const char*>(mqtt_client, unique_id, name, "switch") {
-      snprintf(this->command_topic, 256, "homeassistant/%s/%s/set", platform, unique_id);
-    }
+  ): MqttControl<const char*>(mqtt_client, unique_id, name, "switch") {
+    this->state = MqttSwitch::OFF_STATE;
+  }
 
   void append_discovery_config(JsonObject* config) override;
+  void handle_message(char* message) override;
 
   void switch_on();
   void switch_off();
@@ -27,9 +28,7 @@ class MqttSwitch : public MqttStatefulComponent<const char*> {
 
  protected:
   void serialize_state(char* serialized_state_buffer, size_t buffer_size) override;
-
- private:
-  char command_topic[256];
+  void adapt_state(char* message) override;
 };
 
 #endif

@@ -28,7 +28,7 @@ class MqttStatefulComponent : public MqttComponent {
   T state;
   virtual void serialize_state(char* serialized_state_buffer, size_t buffer_size) = 0;
   void send_state(char* state_payload) {
-    if (this->mqtt_client->publish(this->state_topic, state_payload, false)) {
+    if (this->mqtt_client->publish(this->state_topic, state_payload, true)) {
       Serial.print(this->name);
       Serial.print(" published state: ");
       Serial.println(state);

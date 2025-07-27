@@ -42,13 +42,6 @@ MqttSwitch pump(
   "Pumpe"
 );
 
-std::vector<MqttComponent*> components = {
-  &temperature_sensor,
-  &waterlevel_sensor,
-  &error_detected,
-  &pump,
-};
-
 MqttCredentials mqtt_credentials = {
   mqtt_server,
   mqtt_port,
@@ -62,8 +55,7 @@ MqttDevice plant_tower(
   &mqtt_credentials,
   "plant_tower",
   "Plant Tower",
-  "Jonas",
-  &components
+  "Jonas"
 );
 
 void setup_wifi() {
@@ -82,7 +74,11 @@ void setup() {
   Serial.begin(115200);
   setup_wifi();
   plant_tower.connect_initially();
-  plant_tower.send_discovery();
+  plant_tower.register_component(&temperature_sensor)
+    ->register_component(&waterlevel_sensor)
+    ->register_component(&error_detected)
+    ->register_component(&pump)
+    ->send_discovery();
 }
 
 void loop() {
@@ -91,10 +87,15 @@ void loop() {
   }
   mqtt_client->loop();
 
+  static unsigned long last_update = 0;
+  unsigned long now = millis();
+  if (now - last_update < 60000) {
+    return;
+  }
+  last_update = now;
+
   temperature_sensor.set_state(21.0 + (random(0,100)/100.0));
   waterlevel_sensor.set_state(MqttBinarySensor::ON_STATE);
   error_detected.set_state(MqttBinarySensor::OFF_STATE);
-  pump.switch_on();
-
-  delay(5 * 1000);
+  pump.toggle();
 }

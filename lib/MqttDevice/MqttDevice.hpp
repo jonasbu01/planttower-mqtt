@@ -3,10 +3,11 @@
 
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
-#include <vector>
+#include <map>
 #include "Arduino.h"
 #include "MqttEntity.hpp"
 #include "MqttComponent.hpp"
+#include "MqttSwitch.hpp"
 
 struct MqttCredentials {
   const char* server;
@@ -23,28 +24,36 @@ class MqttDevice : public MqttEntity {
     MqttCredentials* mqtt_credentials,
     const char* unique_id,
     const char* name,
-    const char* manufacturer,
-    std::vector<MqttComponent*>* components
+    const char* manufacturer
   ): MqttEntity(mqtt_client, unique_id, name, "device"),
     mqtt_credentials(mqtt_credentials),
-    manufacturer(manufacturer),
-    components(components) {
+    manufacturer(manufacturer) {
       snprintf(this->discovery_topic, 256, "homeassistant/%s/%s/config", this->platform, unique_id);
     }
 
   void connect_initially();
   void reconnect();
   boolean is_connected();
+
+  MqttDevice* register_component(MqttComponent* component);
+  const MqttDevice* register_component(MqttComponent* component) const;
   void send_discovery();
+
+  ~MqttDevice() {
+    delete this->components_registry;
+    delete this->switches_registry;
+  }
 
  private:
   MqttCredentials* mqtt_credentials;
   const char* manufacturer;
   char discovery_topic[256];
-  std::vector<MqttComponent*>* components;
+  std::map<std::string, MqttComponent*>* components_registry = new std::map<std::string, MqttComponent*>();
+  std::map<std::string, MqttSwitch*>* switches_registry = new std::map<std::string, MqttSwitch*>();
 
   void configure_client();
   void connect_client();
+  void dispatch_message(const char* topic, byte* payload, unsigned int length);
 };
 
 #endif

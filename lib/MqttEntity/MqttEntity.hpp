@@ -20,6 +20,7 @@ class MqttEntity {
     }
 
   const char* get_unique_id();
+  const char* get_state_topic();
 
  protected:
   PubSubClient* mqtt_client;
