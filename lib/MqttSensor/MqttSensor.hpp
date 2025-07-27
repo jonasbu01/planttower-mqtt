@@ -33,7 +33,7 @@ class MqttSensor {
       snprintf(this->state_topic, 256, "homeassistant/sensor/%s/state", unique_id);
     }
 
-  void send_state();
+  void send_state(float state = 0);
   const char* get_unique_id();
   void append_discovery_config(JsonObject* config);
 };

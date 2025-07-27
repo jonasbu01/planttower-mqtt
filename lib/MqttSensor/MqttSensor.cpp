@@ -14,19 +14,17 @@ void MqttSensor::append_discovery_config(JsonObject* config) {
   (*config)["value_template"] = this->value_template;;
 }
 
-void MqttSensor::send_state() {
-  // Simuliere Sensordaten
-  float temp = 21.0 + (random(0,100)/100.0);  // z.B. 24.0 .. 25.0 °C
-
+void MqttSensor::send_state(float state) {
   JsonDocument payload;
-  payload["temperature"] = temp;
+  payload[this->device_class] = state;
 
   char state_payload[128];
   serializeJson(payload, state_payload);
 
   if (this->client->publish(this->state_topic, state_payload, false)) {
-    Serial.print("Published temperature: ");
-    Serial.println(temp);
+    Serial.print(this->name);
+    Serial.print(" published state: ");
+    Serial.println(state);
   } else {
     Serial.println("Publish state FAILED");
   }
