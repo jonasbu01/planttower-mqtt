@@ -7,11 +7,11 @@
 class MqttComponent : public MqttEntity {
  public:
   MqttComponent(
-    PubSubClient* client,
+    PubSubClient* mqtt_client,
     const char* unique_id,
     const char* name,
     const char* platform
-  ): MqttEntity(client, unique_id, name, platform) {}
+  ): MqttEntity(mqtt_client, unique_id, name, platform) {}
   virtual void append_discovery_config(JsonObject* config) = 0;
 };
 

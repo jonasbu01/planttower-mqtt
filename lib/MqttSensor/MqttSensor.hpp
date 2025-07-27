@@ -17,13 +17,13 @@ class MqttSensor : public MqttStatefulComponent<float> {
 
  public:
   MqttSensor(
-    PubSubClient* client,
+    PubSubClient* mqtt_client,
     const char* unique_id,
     const char* name,
     const char* device_class,
     const char* unit,
     const char* value_template
-  ): MqttStatefulComponent<float>(client, unique_id, name, "sensor"),
+  ): MqttStatefulComponent<float>(mqtt_client, unique_id, name, "sensor"),
     device_class(device_class),
     unit(unit),
     value_template(value_template) {}

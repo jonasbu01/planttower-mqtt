@@ -10,13 +10,11 @@
 #include "MqttBinarySensor.hpp"
 #include "MqttSwitch.hpp"
 
-const char* clientId = "ESP32_Planttower";
-
-WiFiClient espClient;
-PubSubClient* client = new PubSubClient(espClient);
+WiFiClient wifi_client;
+PubSubClient* mqtt_client = new PubSubClient(wifi_client);
 
 MqttSensor temperature_sensor(
-  client,
+  mqtt_client,
   "outside_temperature",
   "Außentemperatur",
   "temperature",
@@ -25,21 +23,21 @@ MqttSensor temperature_sensor(
 );
 
 MqttBinarySensor waterlevel_sensor(
-  client,
+  mqtt_client,
   "water_level_low",
   "Wasserstand gering",
   "{{ value_json.state }}"
 );
 
 MqttBinarySensor error_detected(
-  client,
+  mqtt_client,
   "error_detected",
   "Fehler erkannt",
   "{{ value_json.state }}"
 );
 
 MqttSwitch pump(
-  client,
+  mqtt_client,
   "pump",
   "Pumpe"
 );
@@ -51,9 +49,18 @@ std::vector<MqttComponent*> components = {
   &pump,
 };
 
-MqttDevice planttower(
-  client,
-  "planttower",
+MqttCredentials mqtt_credentials = {
+  mqtt_server,
+  mqtt_port,
+  "MQTT_Plant_Tower",
+  mqtt_user,
+  mqtt_password
+};
+
+MqttDevice plant_tower(
+  mqtt_client,
+  &mqtt_credentials,
+  "plant_tower",
   "Plant Tower",
   "Jonas",
   &components
@@ -71,36 +78,18 @@ void setup_wifi() {
   Serial.printf("IP: %s\n", WiFi.localIP().toString().c_str());
 }
 
-void mqtt_reconnect() {
-  while (!client->connected()) {
-    Serial.print("Attempting MQTT connection...");
-    if (client->connect(clientId, mqtt_user, mqtt_pass)) {
-      Serial.println("connected");
-      // Subscribe if needed here
-      client->subscribe("homeassistant/status");
-    } else {
-      Serial.printf("failed, rc=%d try again in 1s\n", client->state());
-      delay(1000);
-    }
-  }
-}
-
 void setup() {
   Serial.begin(115200);
   setup_wifi();
-
-  client->setBufferSize(2048);
-  client->setServer(mqtt_server, mqtt_port);
-  mqtt_reconnect();
-
-  planttower.send_discovery();
+  plant_tower.connect_initially();
+  plant_tower.send_discovery();
 }
 
 void loop() {
-  if (!client->connected()) {
-    mqtt_reconnect();
+  if (!plant_tower.is_connected()) {
+    plant_tower.reconnect();
   }
-  client->loop();
+  mqtt_client->loop();
 
   temperature_sensor.set_state(21.0 + (random(0,100)/100.0));
   waterlevel_sensor.set_state(MqttBinarySensor::ON_STATE);

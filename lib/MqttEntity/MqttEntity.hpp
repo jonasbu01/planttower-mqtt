@@ -7,7 +7,7 @@
 
 class MqttEntity {
  protected:
-  PubSubClient* client;
+  PubSubClient* mqtt_client;
   const char* name;
   const char* unique_id;
   const char* platform;
@@ -15,11 +15,11 @@ class MqttEntity {
 
  public:
   MqttEntity(
-    PubSubClient* client,
+    PubSubClient* mqtt_client,
     const char* unique_id,
     const char* name,
     const char* platform
-  ): client(client),
+  ): mqtt_client(mqtt_client),
     unique_id(unique_id),
     name(name),
     platform(platform) {

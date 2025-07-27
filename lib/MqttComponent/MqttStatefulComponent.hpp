@@ -12,7 +12,7 @@ class MqttStatefulComponent : public MqttComponent {
   T state;
   virtual void serialize_state(char* serialized_state_buffer, size_t buffer_size) = 0;
   void send_state(char* state_payload) {
-    if (this->client->publish(this->state_topic, state_payload, false)) {
+    if (this->mqtt_client->publish(this->state_topic, state_payload, false)) {
       Serial.print(this->name);
       Serial.print(" published state: ");
       Serial.println(state);
@@ -23,11 +23,11 @@ class MqttStatefulComponent : public MqttComponent {
 
  public:
   MqttStatefulComponent(
-    PubSubClient* client,
+    PubSubClient* mqtt_client,
     const char* unique_id,
     const char* name,
     const char* platform
-  ): MqttComponent(client, unique_id, name, platform) {}
+  ): MqttComponent(mqtt_client, unique_id, name, platform) {}
 
   virtual void append_discovery_config(JsonObject* config) = 0;
   void set_state(T state) {

@@ -18,11 +18,11 @@ class MqttBinarySensor : public MqttStatefulComponent<const char*> {
   static constexpr const char* OFF_STATE = "OFF";
 
   MqttBinarySensor(
-    PubSubClient* client,
+    PubSubClient* mqtt_client,
     const char* unique_id,
     const char* name,
     const char* value_template
-  ): MqttStatefulComponent<const char*>(client, unique_id, name, "binary_sensor"),
+  ): MqttStatefulComponent<const char*>(mqtt_client, unique_id, name, "binary_sensor"),
     value_template(value_template) {}
 
   void append_discovery_config(JsonObject* config) override;

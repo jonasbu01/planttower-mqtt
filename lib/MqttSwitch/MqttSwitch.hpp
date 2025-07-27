@@ -18,10 +18,10 @@ class MqttSwitch : public MqttStatefulComponent<const char*> {
   static constexpr const char* OFF_STATE = "OFF";
 
   MqttSwitch(
-    PubSubClient* client,
+    PubSubClient* mqtt_client,
     const char* unique_id,
     const char* name
-  ): MqttStatefulComponent<const char*>(client, unique_id, name, "switch") {
+  ): MqttStatefulComponent<const char*>(mqtt_client, unique_id, name, "switch") {
       snprintf(this->command_topic, 256, "homeassistant/%s/%s/set", platform, unique_id);
     }
 
