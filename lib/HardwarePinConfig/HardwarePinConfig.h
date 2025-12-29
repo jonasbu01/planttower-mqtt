@@ -1,0 +1,13 @@
+#ifndef HARDWAREPINCONFIG
+#define HARDWAREPINCONFIG
+
+//Pins ESP32 WROOM
+#define PUMP_PIN 27
+#define WATERLEVEL_PIN 25
+#define TEMPERATURE_PIN 23
+#define TOUCH_PIN 14
+#define GREEN_LED_PIN 32
+#define RED_LED_PIN 26 
+#define BLUE_LED_PIN 33
+
+#endif
