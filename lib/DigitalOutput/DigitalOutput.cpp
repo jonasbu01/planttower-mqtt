@@ -34,7 +34,7 @@ void DigitalOutput::switch_off() {
     this->is_on = false;
 }
 
-void DigitalOutput::toggle_switch() {
+void DigitalOutput::toggle() {
     if (this->is_on){
         this->switch_off();
     }else{

@@ -9,6 +9,7 @@ void MqttSwitch::append_discovery_config(JsonObject* config) {
 }
 
 void MqttSwitch::handle_message(char* message) {
+  Serial.println("switch message received");
   if (strcmp(message, MqttSwitch::ON_STATE) == 0 || strcmp(message, MqttSwitch::OFF_STATE) == 0) {
     this->adapt_state(message);
     Serial.print(this->name);

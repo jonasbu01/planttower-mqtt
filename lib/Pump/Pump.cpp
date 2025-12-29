@@ -1,7 +1,7 @@
 #include "Pump.hpp"
 
-Pump::Pump(uint8_t pump_pin):DigitalOutput(pump_pin){
-}
+Pump::Pump(uint8_t pump_pin, PubSubClient* mqtt_client, const char* unique_id, const char* name)
+    : DigitalOutput(pump_pin), MqttSwitch(mqtt_client, unique_id, name) {}
 
 void Pump::run_interval_cycle(OneWireTemperatureSensor *temperature_sensor, uint64_t on_duration_s, uint64_t off_duration_below_20C_s) {
     if (temperature_sensor->get_temperature() < 2.0 && !temperature_sensor->get_error()){ //ice preventation
@@ -48,4 +48,23 @@ int64_t Pump::get_duration_until_on_s(){
 
 int64_t Pump::get_duration_until_off_s(){
     return this->duration_until_off_s;
+}
+
+// Überschreibe die Methoden von MqttSwitch
+void Pump::switch_on() {
+    DigitalOutput::switch_on();
+    this->set_state(MqttSwitch::ON_STATE);
+}
+
+void Pump::switch_off() {
+    DigitalOutput::switch_off();
+    this->set_state(MqttSwitch::OFF_STATE); 
+}
+
+void Pump::toggle() {
+    if (this->get_state()) {
+        this->switch_off();
+    } else {
+        this->switch_on();
+    }
 }

@@ -17,7 +17,7 @@ public:
     u_int64_t get_time_switched_off();
     void switch_on();
     void switch_off();
-    void toggle_switch();
+    void toggle();
 };
 
 #endif
