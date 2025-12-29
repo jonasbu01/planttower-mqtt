@@ -1,15 +1,15 @@
 #include "Arduino.h"
-#include <WiFi.h>
+#include "WifiManager.hpp"
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include <vector>
-#include "Secrets.hpp"
 #include "MqttDevice.hpp"
 #include "MqttComponent.hpp"
 #include "MqttSensor.hpp"
 #include "MqttBinarySensor.hpp"
 #include "MqttSwitch.hpp"
 
+WifiManager wifi_manager;
 WiFiClient wifi_client;
 PubSubClient* mqtt_client = new PubSubClient(wifi_client);
 
@@ -52,7 +52,7 @@ MqttCredentials mqtt_credentials = {
   mqtt_pass
 };
 
-MqttDevice plant_tower(
+MqttDevice plant_tower_mqtt(
   mqtt_client,
   &mqtt_credentials,
   "plant_tower",
@@ -60,24 +60,19 @@ MqttDevice plant_tower(
   "Jonas"
 );
 
-void setup_wifi() {
-  delay(10);
-  Serial.printf("Connecting to %s\n", ssid);
-  WiFi.setSleep(false);
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("\nWiFi connected");
-  Serial.printf("IP: %s\n", WiFi.localIP().toString().c_str());
-}
-
 void setup() {
   Serial.begin(115200);
-  setup_wifi();
-  plant_tower.connect_initially();
-  plant_tower.register_component(&temperature_sensor)
+  delay(10);
+  wifi_manager.setup_wifi();
+
+  while (!wifi_manager.get_status()) {
+    wifi_manager.connection_loop();
+    delay(500);
+  }
+  wifi_manager.connection_loop();
+  
+  plant_tower_mqtt.connect_initially();
+  plant_tower_mqtt.register_component(&temperature_sensor)
     ->register_component(&waterlevel_sensor)
     ->register_component(&error_detected)
     ->register_component(&pump)
@@ -85,12 +80,9 @@ void setup() {
 }
 
 void loop() {
-  if (WiFi.status() != WL_CONNECTED) { 
-    Serial.println("WiFi disconnected, reconnecting...");
-    setup_wifi();//while muss entfernt werden bzw. max Anzahl Versuche
-  }
-  if (!plant_tower.is_connected()) { 
-    plant_tower.reconnect();//while muss entfernt werden bzw. max Anzahl Versuche
+  wifi_manager.connection_loop();
+  if (!plant_tower_mqtt.is_connected()) { 
+    plant_tower_mqtt.reconnect();//while muss entfernt werden bzw. max Anzahl Versuche
   }
   mqtt_client->loop();
 
