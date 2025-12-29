@@ -11,6 +11,7 @@ void MqttDevice::reconnect() {
 
 void MqttDevice::configure_client() {
   this->mqtt_client->setBufferSize(2048);
+  this->mqtt_client->setKeepAlive(60);
   this->mqtt_client->setServer(this->mqtt_credentials->server, this->mqtt_credentials->port);
   this->mqtt_client->setCallback([this](char* topic, byte* payload, unsigned int length) {
     this->dispatch_message(topic, payload, length);

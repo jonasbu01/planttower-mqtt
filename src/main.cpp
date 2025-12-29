@@ -13,6 +13,8 @@
 WiFiClient wifi_client;
 PubSubClient* mqtt_client = new PubSubClient(wifi_client);
 
+bool state_bool_test = false;
+
 MqttSensor temperature_sensor(
   mqtt_client,
   "outside_temperature",
@@ -47,7 +49,7 @@ MqttCredentials mqtt_credentials = {
   mqtt_port,
   "MQTT_Plant_Tower",
   mqtt_user,
-  mqtt_password
+  mqtt_pass
 };
 
 MqttDevice plant_tower(
@@ -61,6 +63,7 @@ MqttDevice plant_tower(
 void setup_wifi() {
   delay(10);
   Serial.printf("Connecting to %s\n", ssid);
+  WiFi.setSleep(false);
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -82,8 +85,12 @@ void setup() {
 }
 
 void loop() {
-  if (!plant_tower.is_connected()) {
-    plant_tower.reconnect();
+  if (WiFi.status() != WL_CONNECTED) { 
+    Serial.println("WiFi disconnected, reconnecting...");
+    setup_wifi();//while muss entfernt werden bzw. max Anzahl Versuche
+  }
+  if (!plant_tower.is_connected()) { 
+    plant_tower.reconnect();//while muss entfernt werden bzw. max Anzahl Versuche
   }
   mqtt_client->loop();
 
@@ -95,7 +102,13 @@ void loop() {
   last_update = now;
 
   temperature_sensor.set_state(21.0 + (random(0,100)/100.0));
-  waterlevel_sensor.set_state(MqttBinarySensor::ON_STATE);
-  error_detected.set_state(MqttBinarySensor::OFF_STATE);
+  state_bool_test = !state_bool_test;
+  if (state_bool_test) {
+    waterlevel_sensor.set_state(MqttBinarySensor::ON_STATE);
+    error_detected.set_state(MqttBinarySensor::OFF_STATE);
+  } else {
+    waterlevel_sensor.set_state(MqttBinarySensor::OFF_STATE);
+    error_detected.set_state(MqttBinarySensor::ON_STATE);
+  }
   pump.toggle();
 }
