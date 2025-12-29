@@ -9,7 +9,7 @@ void WifiManager::setup_wifi() {
 
 void WifiManager::connection_loop() {
     if (WiFi.status() != WL_CONNECTED && (millis() - this->last_reconnect_attempt) > 2000) {
-        Serial.printf("WiFi disconnected, try reconnecting to %s...\n", ssid);
+        Serial.printf("WiFi disconnected, try connecting to %s...\n", ssid);
         delay(10);
         WiFi.begin(ssid, password);
         last_reconnect_attempt = millis();
@@ -22,6 +22,6 @@ void WifiManager::connection_loop() {
     }
 }
 
-bool WifiManager::get_status() {
+bool WifiManager::is_connected() {
     return WiFi.status() == WL_CONNECTED;   
 }

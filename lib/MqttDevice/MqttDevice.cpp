@@ -1,14 +1,5 @@
 #include "MqttDevice.hpp"
 
-void MqttDevice::connect_initially() {
-  this->configure_client();
-  this->connect_client();
-}
-
-void MqttDevice::reconnect() {
-  this->connect_client();
-}
-
 void MqttDevice::configure_client() {
   this->mqtt_client->setBufferSize(2048);
   this->mqtt_client->setKeepAlive(60);
@@ -19,7 +10,7 @@ void MqttDevice::configure_client() {
 }
 
 void MqttDevice::connect_client() {
-  while (!mqtt_client->connected()) {
+  if (!mqtt_client->connected() && (millis() - this->last_connection_attempt) > 1000) {
     Serial.print("Attempting MQTT connection...");
     if (mqtt_client->connect(
       this->mqtt_credentials->client_id,
@@ -27,10 +18,13 @@ void MqttDevice::connect_client() {
       this->mqtt_credentials->password
     )) {
       Serial.println("connected");
+      if (!this->discovery_sent){
+        this->send_discovery();
+      }
     } else {
       Serial.printf("failed, rc=%d try again in 1s\n", mqtt_client->state());
-      delay(1000);
     }
+    this->last_connection_attempt = millis();
   }
 }
 
@@ -82,6 +76,7 @@ void MqttDevice::send_discovery() {
 
   if (mqtt_client->publish(this->discovery_topic, payload_buffer, true)) {
     Serial.println("Discovery published successfully.");
+    this->discovery_sent = true;
   } else {
     Serial.println("Discovery publish FAILED!");
   }

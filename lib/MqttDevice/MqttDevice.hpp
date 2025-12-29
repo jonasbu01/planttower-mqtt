@@ -31,8 +31,8 @@ class MqttDevice : public MqttEntity {
       snprintf(this->discovery_topic, 256, "homeassistant/%s/%s/config", this->platform, unique_id);
     }
 
-  void connect_initially();
-  void reconnect();
+  void configure_client();
+  void connect_client();
   boolean is_connected();
 
   MqttDevice* register_component(MqttComponent* component);
@@ -50,9 +50,8 @@ class MqttDevice : public MqttEntity {
   char discovery_topic[256];
   std::map<std::string, MqttComponent*>* components_registry = new std::map<std::string, MqttComponent*>();
   std::map<std::string, MqttSwitch*>* switches_registry = new std::map<std::string, MqttSwitch*>();
-
-  void configure_client();
-  void connect_client();
+  bool discovery_sent = false;
+  uint64_t last_connection_attempt = 0;
   void dispatch_message(const char* topic, byte* payload, unsigned int length);
 };
 

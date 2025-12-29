@@ -60,39 +60,39 @@ MqttDevice plant_tower_mqtt(
   "Jonas"
 );
 
+void handle_connections(){
+  //Wifi
+  wifi_manager.connection_loop();
+  //MQTT
+  if (!plant_tower_mqtt.is_connected() && wifi_manager.is_connected()) { 
+    plant_tower_mqtt.connect_client();
+  }
+  mqtt_client->loop();
+}
+
 void setup() {
   Serial.begin(115200);
   delay(10);
   wifi_manager.setup_wifi();
-
-  while (!wifi_manager.get_status()) {
-    wifi_manager.connection_loop();
-    delay(500);
-  }
-  wifi_manager.connection_loop();
-  
-  plant_tower_mqtt.connect_initially();
+  plant_tower_mqtt.configure_client();
   plant_tower_mqtt.register_component(&temperature_sensor)
-    ->register_component(&waterlevel_sensor)
-    ->register_component(&error_detected)
-    ->register_component(&pump)
-    ->send_discovery();
+  ->register_component(&waterlevel_sensor)
+  ->register_component(&error_detected)
+  ->register_component(&pump);
 }
 
 void loop() {
-  wifi_manager.connection_loop();
-  if (!plant_tower_mqtt.is_connected()) { 
-    plant_tower_mqtt.reconnect();//while muss entfernt werden bzw. max Anzahl Versuche
-  }
-  mqtt_client->loop();
+  handle_connections();
 
+
+  
   static unsigned long last_update = 0;
   unsigned long now = millis();
-  if (now - last_update < 60000) {
+  if (now - last_update < 10000) {
     return;
   }
   last_update = now;
-
+  Serial.println("loop");
   temperature_sensor.set_state(21.0 + (random(0,100)/100.0));
   state_bool_test = !state_bool_test;
   if (state_bool_test) {

@@ -13,7 +13,7 @@ public:
   WifiManager();
   void setup_wifi();
   void connection_loop();
-  bool get_status();
+  bool is_connected();
 };
 
 #endif
