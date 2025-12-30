@@ -1,7 +1,20 @@
 #include "Pump.hpp"
 
-Pump::Pump(uint8_t pump_pin, PubSubClient* mqtt_client, const char* unique_id, const char* name)
-    : DigitalOutput(pump_pin), MqttSwitch(mqtt_client, unique_id, name) {}
+Pump::Pump(uint8_t pump_pin, MqttSwitch* mqtt_switch)
+    : DigitalOutput(pump_pin) {
+        this->mqtt_switch = mqtt_switch;
+        this->mqtt_switch->on_state_change([this](const char* state) {
+            if (strcmp(state, MqttSwitch::ON_STATE) == 0) {
+                if (!this->get_state()) {
+                    this->switch_on();
+                }
+            } else if (strcmp(state, MqttSwitch::OFF_STATE) == 0) {
+                if (this->get_state()) {
+                    this->switch_off();
+                }
+            }
+        });
+    }
 
 void Pump::run_interval_cycle(OneWireTemperatureSensor *temperature_sensor, uint64_t on_duration_s, uint64_t off_duration_below_20C_s) {
     if (temperature_sensor->get_temperature() < 2.0 && !temperature_sensor->get_error()){ //ice preventation
@@ -17,6 +30,7 @@ void Pump::run_interval_cycle(OneWireTemperatureSensor *temperature_sensor, uint
             this->duration_until_off_s = 0;
             if (this->duration_until_on_s <= 0) {
                 this->switch_on();
+                this->mqtt_switch->switch_on();
             }
         }
         if (this->get_state()){ //on -> switch off
@@ -24,6 +38,7 @@ void Pump::run_interval_cycle(OneWireTemperatureSensor *temperature_sensor, uint
             this->duration_until_on_s = 0;
             if(this->duration_until_off_s <= 0) { 
                 this->switch_off();
+                this->mqtt_switch->switch_off();
             }
         }
     }
@@ -50,23 +65,4 @@ int64_t Pump::get_duration_until_on_s(){
 
 int64_t Pump::get_duration_until_off_s(){
     return this->duration_until_off_s;
-}
-
-// Überschreibe die Methoden von MqttSwitch
-void Pump::switch_on() {
-    DigitalOutput::switch_on();
-    MqttSwitch::switch_on();
-}
-
-void Pump::switch_off() {
-    DigitalOutput::switch_off();
-    MqttSwitch::switch_off();
-}
-
-void Pump::toggle() {
-    if (this->get_state()) {
-        this->switch_off();
-    } else {
-        this->switch_on();
-    }
 }

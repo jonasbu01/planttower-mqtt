@@ -22,13 +22,19 @@ class MqttSwitch : public MqttControl<const char*> {
   void append_discovery_config(JsonObject* config) override;
   void handle_message(char* message) override;
 
-  virtual void switch_on();
-  virtual void switch_off();
-  virtual void toggle();
+  void on_state_change(const std::function<void(const char*)>& callback);
+
+  void switch_on();
+  void switch_off();
+  void toggle();
+  bool is_on();
 
  protected:
   void serialize_state(char* serialized_state_buffer, size_t buffer_size) override;
   void adapt_state(char* message) override;
+
+ private:
+  std::function<void(const char*)> state_change_callback = [](const char*){};
 };
 
 #endif

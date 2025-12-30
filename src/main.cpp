@@ -48,19 +48,19 @@ MqttBinarySensor* mqtt_waterlevel_sensor = new MqttBinarySensor(
   "{{ value_json.state }}"
 );
 
-//MqttSwitch* mqtt_pump = new MqttSwitch(
-//  mqtt_client,
-//  "pump",
-//  "Pumpe"
-//);
-
 MqttSwitch* mqtt_test_switch = new MqttSwitch(
   mqtt_client,
   "schalter_test",
   "Schalter Test"
 );
 
-Pump *mqtt_pump = new Pump(PUMP_PIN, mqtt_client, "pump", "Pumpe");
+MqttSwitch* mqtt_pump_switch = new MqttSwitch(
+  mqtt_client,
+  "pump",
+  "Pumpe"
+);
+
+Pump *mqtt_pump = new Pump(PUMP_PIN, mqtt_pump_switch);
 
 MqttCredentials mqtt_credentials = {
   mqtt_server,
@@ -95,7 +95,7 @@ void setup() {
   mqtt_device.configure_client();
   mqtt_device.register_component(mqtt_temperature_sensor)
     ->register_component(mqtt_waterlevel_sensor)
-    ->register_component(mqtt_pump)
+    ->register_component(mqtt_pump_switch)
     ->register_component(mqtt_test_switch);
   temperature_sensor->request_value();
   mqtt_pump->switch_on(); //initial phase after start up

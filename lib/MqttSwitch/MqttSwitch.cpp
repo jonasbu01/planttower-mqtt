@@ -32,25 +32,38 @@ void MqttSwitch::adapt_state(char* message) {
   char state_payload[128];
   this->serialize_state(state_payload, 128);
   this->confirm_state(state_payload);
+  this->state_change_callback(this->state);
+}
+
+void MqttSwitch::on_state_change(const std::function<void(const char*)>& callback) {
+  this->state_change_callback = callback;
 }
 
 void MqttSwitch::switch_on() {
   this->set_state(MqttSwitch::ON_STATE);
+  this->state_change_callback(this->state);
 }
 
 void MqttSwitch::switch_off() {
   this->set_state(MqttSwitch::OFF_STATE);
+  this->state_change_callback(this->state);
 }
 
 void MqttSwitch::toggle() {
   if (strcmp(this->state, MqttSwitch::ON_STATE) == 0) {
     this->switch_off();
+    this->state_change_callback(this->state);
   } else if (strcmp(this->state, MqttSwitch::OFF_STATE) == 0) {
     this->switch_on();
+    this->state_change_callback(this->state);
   } else {
     Serial.print("Invalid state for toggle: ");
     Serial.println(this->state);
   }
+}
+
+bool MqttSwitch::is_on() {
+  return strcmp(this->state, MqttSwitch::ON_STATE) == 0;
 }
 
 void MqttSwitch::serialize_state(char* serialized_state_buffer, size_t buffer_size) {
