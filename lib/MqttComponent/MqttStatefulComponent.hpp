@@ -30,10 +30,10 @@ class MqttStatefulComponent : public MqttComponent {
   void send_state(char* state_payload) {
     if (this->mqtt_client->publish(this->state_topic, state_payload, true)) {
       Serial.print(this->name);
-      Serial.print(" published state: ");
+      Serial.print(" sent state: ");
       Serial.println(state);
     } else {
-      Serial.println("Publish state FAILED");
+      Serial.println("Sending state FAILED");
     }
   };
 };

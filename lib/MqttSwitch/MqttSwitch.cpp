@@ -23,20 +23,16 @@ void MqttSwitch::handle_message(char* message) {
   }
 }
 
-void MqttSwitch::adapt_state(char* message) {
-  if (strcmp(message, MqttSwitch::ON_STATE) == 0) {
-    this->state = MqttSwitch::ON_STATE;
-  } else if (strcmp(message, MqttSwitch::OFF_STATE) == 0) {
-    this->state = MqttSwitch::OFF_STATE;
-  }
-  char state_payload[128];
-  this->serialize_state(state_payload, 128);
-  this->confirm_state(state_payload);
-  this->state_change_callback(this->state);
-}
-
 void MqttSwitch::on_state_change(const std::function<void(const char*)>& callback) {
   this->state_change_callback = callback;
+}
+
+void MqttSwitch::adapt_state(char* message) {
+  if (strcmp(message, MqttSwitch::ON_STATE) == 0) {
+    this->switch_on();
+  } else if (strcmp(message, MqttSwitch::OFF_STATE) == 0) {
+    this->switch_off();
+  }
 }
 
 void MqttSwitch::switch_on() {

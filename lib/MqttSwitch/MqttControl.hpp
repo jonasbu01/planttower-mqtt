@@ -24,16 +24,6 @@ class MqttControl : public MqttStatefulComponent<T> {
   char command_topic[256];
 
   virtual void adapt_state(char* message) = 0;
-
-  void confirm_state(char* state_payload) {
-    if (this->mqtt_client->publish(this->state_topic, state_payload, true)) {
-      Serial.print(this->name);
-      Serial.print(" confirmed state: ");
-      Serial.println(this->state);
-    } else {
-      Serial.println("Confirm state FAILED");
-    }
-  }
 };
 
 #endif
