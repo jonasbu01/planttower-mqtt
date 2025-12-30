@@ -48,11 +48,17 @@ MqttBinarySensor* mqtt_waterlevel_sensor = new MqttBinarySensor(
   "{{ value_json.state }}"
 );
 
-//MqttSwitch mqtt_pump(
+//MqttSwitch* mqtt_pump = new MqttSwitch(
 //  mqtt_client,
 //  "pump",
 //  "Pumpe"
 //);
+
+MqttSwitch* mqtt_test_switch = new MqttSwitch(
+  mqtt_client,
+  "schalter_test",
+  "Schalter Test"
+);
 
 Pump *mqtt_pump = new Pump(PUMP_PIN, mqtt_client, "pump", "Pumpe");
 
@@ -89,7 +95,8 @@ void setup() {
   mqtt_device.configure_client();
   mqtt_device.register_component(mqtt_temperature_sensor)
   ->register_component(mqtt_waterlevel_sensor)
-  ->register_component(mqtt_pump);
+  ->register_component(mqtt_pump)
+  ->register_component(mqtt_test_switch);
   temperature_sensor->request_value();
   mqtt_pump->switch_on(); //initial phase after start up
 }
@@ -103,10 +110,10 @@ void loop() {
       waterlevel_sensor->refresh_state();
     }
     temperature_sensor->request_value_by_interval(15);
-    mqtt_pump->run_interval_cycle(temperature_sensor, 10, 20); //1 min = 60 s on / 40 min = 2400 s off (below 20 °C)
+    mqtt_pump->run_interval_cycle(temperature_sensor, 60, 60); //1 min = 60 s on / 40 min = 2400 s off (below 20 °C)
     led_display->display_state(mqtt_pump, waterlevel_sensor, temperature_sensor);
 
-    if (time_serial_print_interval < millis()){ //every 2 seconds
+    if (time_serial_print_interval < millis()){ //every 10 seconds
       //print states
       Serial.println("=====================");
       Serial.print("Pumpe: ");
@@ -131,12 +138,13 @@ void loop() {
         Serial.println("Taste: nicht betätigt");
       }
 
-      //to do: only publish when changed
+      mqtt_test_switch->switch_on(); //test publish      
+      //to do: only publish when changed + initial sent after mqtt connection
       mqtt_temperature_sensor->set_state(temperature_sensor->get_temperature());
       mqtt_waterlevel_sensor->set_state(waterlevel_sensor->get_state() ? MqttBinarySensor::ON_STATE : MqttBinarySensor::OFF_STATE);
 
 
-      time_serial_print_interval = millis() + 2000;
+      time_serial_print_interval = millis() + 10000;
     }
   }
 }

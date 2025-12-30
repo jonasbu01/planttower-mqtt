@@ -41,6 +41,9 @@ MqttDevice* MqttDevice::register_component(MqttComponent* component) {
       std::make_pair(control->get_command_topic(), control)
     );
     this->mqtt_client->subscribe(control->get_command_topic());
+    Serial.printf("Subscribed to topic: %s\n", control->get_command_topic());
+  }else {
+    Serial.println("Component is not a MqttSwitch, skipping subscription.");
   }
   return this;
 }
