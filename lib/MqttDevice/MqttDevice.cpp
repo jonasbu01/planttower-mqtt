@@ -21,10 +21,19 @@ void MqttDevice::connect_client() {
       if (!this->discovery_sent){
         this->send_discovery();
       }
+      this->subscribe_command_topics();
     } else {
       Serial.printf("failed, rc=%d try again in 1s\n", mqtt_client->state());
     }
     this->last_connection_attempt = millis();
+  }
+}
+
+void MqttDevice::subscribe_command_topics() {
+  for (const auto& entry : *this->switches_registry) {
+    MqttSwitch* control = entry.second;
+    this->mqtt_client->subscribe(control->get_command_topic());
+    Serial.printf("Subscribed to topic: %s\n", control->get_command_topic());
   }
 }
 

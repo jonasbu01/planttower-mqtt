@@ -37,6 +37,7 @@ class MqttDevice : public MqttEntity {
 
   MqttDevice* register_component(MqttComponent* component);
   const MqttDevice* register_component(MqttComponent* component) const;
+  void subscribe_command_topics();
   void send_discovery();
 
   ~MqttDevice() {

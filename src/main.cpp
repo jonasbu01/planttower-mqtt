@@ -94,9 +94,9 @@ void setup() {
   wifi_manager.setup_wifi();
   mqtt_device.configure_client();
   mqtt_device.register_component(mqtt_temperature_sensor)
-  ->register_component(mqtt_waterlevel_sensor)
-  ->register_component(mqtt_pump)
-  ->register_component(mqtt_test_switch);
+    ->register_component(mqtt_waterlevel_sensor)
+    ->register_component(mqtt_pump)
+    ->register_component(mqtt_test_switch);
   temperature_sensor->request_value();
   mqtt_pump->switch_on(); //initial phase after start up
 }
