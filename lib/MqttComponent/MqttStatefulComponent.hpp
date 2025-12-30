@@ -23,6 +23,9 @@ class MqttStatefulComponent : public MqttComponent {
     this->serialize_state(state_payload, 128);
     this->send_state(state_payload);
   };
+  T get_state() {
+    return this->state;
+  };
 
  protected:
   T state;

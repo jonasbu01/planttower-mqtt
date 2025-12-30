@@ -35,26 +35,28 @@ void MqttSwitch::adapt_state(char* message) {
   }
 }
 
-void MqttSwitch::switch_on() {
-  this->set_state(MqttSwitch::ON_STATE);
-  this->state_change_callback(this->state);
-}
-
-void MqttSwitch::switch_off() {
-  this->set_state(MqttSwitch::OFF_STATE);
-  this->state_change_callback(this->state);
-}
-
 void MqttSwitch::toggle() {
   if (strcmp(this->state, MqttSwitch::ON_STATE) == 0) {
     this->switch_off();
-    this->state_change_callback(this->state);
   } else if (strcmp(this->state, MqttSwitch::OFF_STATE) == 0) {
     this->switch_on();
-    this->state_change_callback(this->state);
   } else {
     Serial.print("Invalid state for toggle: ");
     Serial.println(this->state);
+  }
+}
+
+void MqttSwitch::switch_on() {
+  if (!this->is_on()) {
+    this->set_state(MqttSwitch::ON_STATE);
+    this->state_change_callback(this->state);
+  }
+}
+
+void MqttSwitch::switch_off() {
+  if (this->is_on()) {
+    this->set_state(MqttSwitch::OFF_STATE);
+    this->state_change_callback(this->state);
   }
 }
 
