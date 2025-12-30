@@ -8,6 +8,8 @@
 #include "MqttEntity.hpp"
 #include "MqttComponent.hpp"
 #include "MqttSwitch.hpp"
+#include "MqttSensor.hpp"
+#include "MqttBinarySensor.hpp"
 
 struct MqttCredentials {
   const char* server;
@@ -36,9 +38,9 @@ class MqttDevice : public MqttEntity {
   boolean is_connected();
 
   MqttDevice* register_component(MqttComponent* component);
-  const MqttDevice* register_component(MqttComponent* component) const;
   void subscribe_command_topics();
   void send_discovery();
+  void publish_all_states();
 
   ~MqttDevice() {
     delete this->components_registry;

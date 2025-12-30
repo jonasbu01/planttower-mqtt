@@ -45,6 +45,13 @@ class MqttStatefulComponent : public MqttComponent {
       Serial.println("Sending state FAILED");
     }
   };
+
+ public:
+  void publish_state() {
+    char state_payload[128];
+    this->serialize_state(state_payload, 128);
+    this->send_state(state_payload);
+  }
 };
 
 #endif

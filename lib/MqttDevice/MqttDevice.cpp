@@ -22,6 +22,7 @@ void MqttDevice::connect_client() {
         this->send_discovery();
       }
       this->subscribe_command_topics();
+      this->publish_all_states();
     } else {
       Serial.printf("failed, rc=%d try again in 1s\n", mqtt_client->state());
     }
@@ -51,8 +52,6 @@ MqttDevice* MqttDevice::register_component(MqttComponent* component) {
     );
     this->mqtt_client->subscribe(control->get_command_topic());
     Serial.printf("Subscribed to topic: %s\n", control->get_command_topic());
-  }else {
-    Serial.println("Component is not a MqttSwitch, skipping subscription.");
   }
   return this;
 }
@@ -101,4 +100,20 @@ void MqttDevice::dispatch_message(const char* topic, byte* payload, unsigned int
   message[length] = '\0';
   Serial.println(message);
   this->switches_registry->at(topic)->handle_message(message);
+}
+
+void MqttDevice::publish_all_states() {
+  Serial.println("Publishing states for all stateful components...");
+  for (const auto& entry : *this->components_registry) {
+    MqttComponent* component = entry.second;
+    if (auto* stateful_component = dynamic_cast<MqttSwitch*>(component)) {
+      stateful_component->publish_state();
+    } 
+    else if (auto* stateful_component = dynamic_cast<MqttBinarySensor*>(component)) {
+      stateful_component->publish_state();
+    } 
+    else if (auto* stateful_component = dynamic_cast<MqttSensor*>(component)) {
+      stateful_component->publish_state();
+    }
+  }
 }

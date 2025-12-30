@@ -98,7 +98,7 @@ void setup() {
     ->register_component(mqtt_pump_switch)
     ->register_component(mqtt_test_switch);
   temperature_sensor->request_value();
-  mqtt_pump->switch_on(); //initial phase after start up
+  mqtt_pump_switch->switch_on(); //initial phase after start up
 }
 
 void loop() {
