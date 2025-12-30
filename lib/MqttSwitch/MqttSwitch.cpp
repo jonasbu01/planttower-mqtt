@@ -1,5 +1,9 @@
 #include "MqttSwitch.hpp"
 
+bool MqttSwitch::equals_current_state(const char* other_state) {
+  return strcmp(this->state, other_state) == 0;
+}
+
 void MqttSwitch::append_discovery_config(JsonObject* config) {
   (*config)["name"] = this->MqttStatefulComponent::name;
   (*config)["unique_id"] = this->MqttStatefulComponent::unique_id;
@@ -47,17 +51,13 @@ void MqttSwitch::toggle() {
 }
 
 void MqttSwitch::switch_on() {
-  if (!this->is_on()) {
-    this->set_state(MqttSwitch::ON_STATE);
-    this->state_change_callback(this->state);
-  }
+  this->set_state(MqttSwitch::ON_STATE);
+  this->state_change_callback(this->state);
 }
 
 void MqttSwitch::switch_off() {
-  if (this->is_on()) {
-    this->set_state(MqttSwitch::OFF_STATE);
-    this->state_change_callback(this->state);
-  }
+  this->set_state(MqttSwitch::OFF_STATE);
+  this->state_change_callback(this->state);
 }
 
 bool MqttSwitch::is_on() {

@@ -18,7 +18,7 @@ class MqttSwitch : public MqttControl<const char*> {
   ): MqttControl<const char*>(mqtt_client, unique_id, name, "switch") {
     this->state = MqttSwitch::OFF_STATE;
   }
-
+  bool equals_current_state(const char* other_state) override;
   void append_discovery_config(JsonObject* config) override;
   void handle_message(char* message) override;
 

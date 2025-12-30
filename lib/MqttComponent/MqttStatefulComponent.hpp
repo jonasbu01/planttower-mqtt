@@ -18,6 +18,9 @@ class MqttStatefulComponent : public MqttComponent {
 
   virtual void append_discovery_config(JsonObject* config) = 0;
   void set_state(T state) {
+    if (this->equals_current_state(state)) {
+      return;
+    }
     this->state = state;
     char state_payload[128];
     this->serialize_state(state_payload, 128);
@@ -25,6 +28,9 @@ class MqttStatefulComponent : public MqttComponent {
   };
   T get_state() {
     return this->state;
+  };
+  virtual bool equals_current_state(T other_state) {
+    return this->state == other_state;
   };
 
  protected:
