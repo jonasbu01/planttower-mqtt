@@ -32,6 +32,15 @@ LedDisplay *led_display = new LedDisplay(GREEN_LED_PIN, RED_LED_PIN, BLUE_LED_PI
 //Variables
 uint64_t time_serial_print_interval = 0;
 
+MqttSensor* mqtt_next_pump_change_sensor = new MqttSensor(
+  mqtt_client,
+  "duration_next_pump_change_s",
+  "Nächte Pumpenumschaltung",
+  "duration",
+  "s",
+  "{{ value_json.duration }}"
+);
+
 MqttSensor* mqtt_temperature_sensor = new MqttSensor(
   mqtt_client,
   "outside_temperature",
@@ -93,7 +102,8 @@ void setup() {
   delay(10);
   wifi_manager.setup_wifi();
   mqtt_device.configure_client();
-  mqtt_device.register_component(mqtt_temperature_sensor)
+  mqtt_device.register_component(mqtt_next_pump_change_sensor)
+    ->register_component(mqtt_temperature_sensor)
     ->register_component(mqtt_waterlevel_sensor)
     ->register_component(mqtt_pump_switch)
     ->register_component(mqtt_test_switch);
@@ -110,10 +120,10 @@ void loop() {
       waterlevel_sensor->refresh_state();
     }
     temperature_sensor->request_value_by_interval(15);
-    mqtt_pump->run_interval_cycle(temperature_sensor, 60, 60); //1 min = 60 s on / 40 min = 2400 s off (below 20 °C)
+    mqtt_pump->run_interval_cycle(temperature_sensor, 60, 2400); //1 min = 60 s on / 40 min = 2400 s off (below 20 °C)
     led_display->display_state(mqtt_pump, waterlevel_sensor, temperature_sensor);
 
-    if (time_serial_print_interval < millis()){ //every 10 seconds
+    if (time_serial_print_interval < millis()){ //every 1 seconds
       //print states
       Serial.println("=====================");
       Serial.print("Pumpe: ");
@@ -140,11 +150,16 @@ void loop() {
 
       mqtt_test_switch->switch_on(); //test publish      
       //to do: only publish when changed + initial sent after mqtt connection
+      if (mqtt_pump->get_state()){
+        mqtt_next_pump_change_sensor->set_state(mqtt_pump->get_duration_until_off_s());//auf 10s gerundet reicht
+      }else{
+        mqtt_next_pump_change_sensor->set_state(mqtt_pump->get_duration_until_on_s());
+      }
       mqtt_temperature_sensor->set_state(temperature_sensor->get_temperature());
       mqtt_waterlevel_sensor->set_state(waterlevel_sensor->get_state() ? MqttBinarySensor::ON_STATE : MqttBinarySensor::OFF_STATE);
 
 
-      time_serial_print_interval = millis() + 10000;
+      time_serial_print_interval = millis() + 1000;
     }
   }
 }
