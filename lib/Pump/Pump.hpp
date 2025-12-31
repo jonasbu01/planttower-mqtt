@@ -18,6 +18,7 @@ public:
     void run_interval_cycle(OneWireTemperatureSensor *temperature_sensor, uint64_t on_duration_s, uint64_t off_duration_below_25C_s);
     int64_t get_duration_until_on_s();
     int64_t get_duration_until_off_s();
+    int64_t get_duration_until_change_s();
 };
 
 #endif

@@ -66,3 +66,11 @@ int64_t Pump::get_duration_until_on_s(){
 int64_t Pump::get_duration_until_off_s(){
     return this->duration_until_off_s;
 }
+
+int64_t Pump::get_duration_until_change_s(){
+    if (this->get_state()){
+        return this->duration_until_off_s;
+    }else{
+        return this->duration_until_on_s;
+    }
+}
