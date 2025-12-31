@@ -17,7 +17,7 @@ private:
 public:
     LedDisplay(uint8_t green_led_pin, uint8_t red_led_pin, uint8_t blue_led_pin);
     bool run_startup_animation();
-    void display_state(Pump *pump, DigitalInput *waterlevel_sensor, OneWireTemperatureSensor *temperature_sensor);
+    void display_state(Pump *pump, DigitalInput *waterlevel_sensor, OneWireTemperatureSensor *temperature_sensor, bool wifi_connected, bool mqtt_connected);
 };
 
 #endif

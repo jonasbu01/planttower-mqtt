@@ -3,35 +3,40 @@
 LedDisplay::LedDisplay(uint8_t green_led_pin, uint8_t red_led_pin, uint8_t blue_led_pin) 
 : green_led(green_led_pin), red_led(red_led_pin), blue_led(blue_led_pin) {}
 
+
+
 bool LedDisplay::run_startup_animation(){
-    const uint8_t MAX_LEVEL = 60;
-    const uint8_t SWITCH_TO_NEXT_LEVEL_UP = 15;
-    const uint8_t SWITCH_TO_NEXT_LEVEL_DOWN = MAX_LEVEL - SWITCH_TO_NEXT_LEVEL_UP;
+    const uint8_t MAX_PERCENTAGE = 50;
+    const uint8_t SWITCH_TO_NEXT_PERCENTAGE_UP = 16;
+    const uint8_t SWITCH_TO_NEXT_PERCENTAGE_DOWN = MAX_PERCENTAGE - SWITCH_TO_NEXT_PERCENTAGE_UP;
+    const uint16_t INTERVAL_MS = 15;
     const uint8_t LOOPS = 3;
 
     if (!this->startup_animation_finished){
         switch (this->startup_animation_step % 2)
         {
         case 0: //fade leds up
-            this->green_led.increase_to_target_value(MAX_LEVEL);
-            if (this->green_led.get_value() > SWITCH_TO_NEXT_LEVEL_UP){
-                this->red_led.increase_to_target_value(MAX_LEVEL);
+            this->green_led.fade_logarithmic_to_percent(MAX_PERCENTAGE, INTERVAL_MS);
+            if (this->green_led.get_current_percentage() > SWITCH_TO_NEXT_PERCENTAGE_UP){
+                this->red_led.fade_logarithmic_to_percent(MAX_PERCENTAGE, INTERVAL_MS);
             }
-            if (this->red_led.get_value() > SWITCH_TO_NEXT_LEVEL_UP){
-                if(this->blue_led.increase_to_target_value(MAX_LEVEL)){
-                    this->startup_animation_step++;
-                }
+            if (this->red_led.get_current_percentage() > SWITCH_TO_NEXT_PERCENTAGE_UP){
+                this->blue_led.fade_logarithmic_to_percent(MAX_PERCENTAGE, INTERVAL_MS);
+            }
+            if (this->blue_led.get_current_percentage() >= MAX_PERCENTAGE){
+                this->startup_animation_step++;
             }
             break;
         case 1: //fade leds down
-            this->green_led.decrease_to_target_value(0);
-            if (this->green_led.get_value() < SWITCH_TO_NEXT_LEVEL_DOWN){
-                this->red_led.decrease_to_target_value(0);
+            this->green_led.fade_logarithmic_to_percent(0, INTERVAL_MS);
+            if (this->green_led.get_current_percentage() < SWITCH_TO_NEXT_PERCENTAGE_DOWN){
+                this->red_led.fade_logarithmic_to_percent(0, INTERVAL_MS);
             }
-            if (this->red_led.get_value() < SWITCH_TO_NEXT_LEVEL_DOWN){
-                if(this->blue_led.decrease_to_target_value(0)){
-                    this->startup_animation_step++;
-                }
+            if (this->red_led.get_current_percentage() < SWITCH_TO_NEXT_PERCENTAGE_DOWN){
+                this->blue_led.fade_logarithmic_to_percent(0, INTERVAL_MS);
+            }
+            if (this->blue_led.get_current_percentage() == 0){
+                this->startup_animation_step++;
             }
             break;
         default:
@@ -42,24 +47,31 @@ bool LedDisplay::run_startup_animation(){
     return this->startup_animation_finished;
 }
 
-void LedDisplay::display_state(Pump *pump, DigitalInput *waterlevel_sensor, OneWireTemperatureSensor *temperature_sensor){
-    //pump - green led
+void LedDisplay::display_state(Pump *pump, DigitalInput *waterlevel_sensor, OneWireTemperatureSensor *temperature_sensor, bool wifi_connected, bool mqtt_connected){
+    //green led -> pump state
     if (pump->get_state()){
-        this->green_led.fade_between_two_values(255, 30, 2, 2, 1, 1, 30, 30);
+        this->green_led.fade_logarithmic_between_percentages(30, 100, 15, 15, 250, 250); //pump on
     }else{
-        this->green_led.fade_to_target_value(60);
+        this->green_led.fade_logarithmic_to_percent(30); //pump off
     }
-    //water level and errors -> red led
+    
+    //red led -> waterlevel / error state
     if (waterlevel_sensor->get_state()){
-        this->red_led.fade_between_two_values(255, 0, 2, 5, 1, 1, 150, 100); //water level low
+        this->red_led.fade_logarithmic_between_percentages(0, 100, 30, 10, 300, 200); //water level low
     }else{
         bool error = temperature_sensor->get_error(); 
         if (error){
-            this->red_led.fade_between_two_values(255, 0, 1, 1, 3, 3, 120, 150); //any error
+            this->red_led.fade_logarithmic_between_percentages(0, 100, 2, 2, 250, 250); //any error
         }else{
-            this->red_led.fade_to_target_value(0); //no error
+            this->red_led.fade_logarithmic_to_percent(0); //no error
         }
     }
-    //zigbee - blue led
-    this->blue_led.fade_between_two_values(120, 0, 20, 20, 1, 1, 50, 2000); //search signal
+    //blue led -> connectivity state
+    if (wifi_connected && mqtt_connected){
+        this->blue_led.fade_logarithmic_to_percent(30); //all connected
+    }else if (wifi_connected && !mqtt_connected){
+        this->blue_led.fade_logarithmic_between_percentages(30, 100, 8, 8, 100, 100); //wifi connected, mqtt not
+    }else{
+        this->blue_led.fade_logarithmic_between_percentages(0, 100, 30, 30, 500, 500); //no connection
+    }
 }
