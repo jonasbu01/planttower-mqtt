@@ -10,6 +10,7 @@
 #include "MqttBinarySensor.hpp"
 #include "MqttSwitch.hpp"
 //Hardware Components
+#include "EepromUtils.hpp"
 #include "HardwarePinConfig.h"
 #include "DigitalInput.hpp"
 #include "AnalogInput.hpp"
@@ -85,7 +86,7 @@ MqttDevice mqtt_device(
 );
 
 //Objects for hardware components
-Pump *pump = new Pump(PUMP_PIN, mqtt_pump_enable_switch, mqtt_pump_switch);
+Pump *pump = new Pump(PUMP_PIN, 0, mqtt_pump_enable_switch, mqtt_pump_switch);
 DigitalInput *waterlevel_sensor = new DigitalInput(WATERLEVEL_PIN, true, true);
 OneWireTemperatureSensor *temperature_sensor = new OneWireTemperatureSensor(TEMPERATURE_PIN);
 LedDisplay *led_display = new LedDisplay(GREEN_LED_PIN, RED_LED_PIN, BLUE_LED_PIN);
@@ -106,6 +107,7 @@ void handle_connections(){
 }
 
 void setup() {
+  eeprom_begin();
   Serial.begin(115200);
   delay(10);
   wifi_manager.setup_wifi();
@@ -115,9 +117,10 @@ void setup() {
     ->register_component(mqtt_waterlevel_sensor)
     ->register_component(mqtt_pump_switch)
     ->register_component(mqtt_pump_enable_switch);
+  pump->begin();
   temperature_sensor->request_value();
   while(!led_display->run_startup_animation());
-  mqtt_pump_switch->switch_on(); //initial phase after start up
+  mqtt_pump_switch->switch_on(); //initial state at startup (if pump enabled)
 }
 
 void loop() {
@@ -143,7 +146,7 @@ void loop() {
   //print states every second
   if (time_serial_print_interval < millis()){
     Serial.println("=====================");
-    Serial.println("Pump enabled: " + String(pump->get_enabled() ? "yes" : "no"));
+    Serial.println("Pump enabled: " + String(pump->get_enabled() ? "enabled" : "disabled"));
     Serial.printf("Pump state: %s (in %" PRId64 " s %s)\n", pump->get_state() ? "on" : "off", pump->get_duration_until_change_s(), pump->get_state() ? "off" : "on");
     Serial.println(waterlevel_sensor->get_state()? "Water-Level: low" : "Water-Level: ok");
     Serial.println(temperature_sensor->get_error() ? "Air temp.: Error, no connection?" : String("Air temp.: ") + temperature_sensor->get_temperature() + " °C");

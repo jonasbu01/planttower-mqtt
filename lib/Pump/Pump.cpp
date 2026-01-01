@@ -1,8 +1,8 @@
 #include "Pump.hpp"
 
-Pump::Pump(uint8_t pump_pin, MqttSwitch* mqtt_pump_enable_switch, MqttSwitch* mqtt_pump_switch)
+Pump::Pump(uint8_t pump_pin, uint8_t address_eeprom_byte, MqttSwitch* mqtt_pump_enable_switch, MqttSwitch* mqtt_pump_switch)
     : DigitalOutput(pump_pin) {
-        //load enabled state from EEPROM???
+        this->address_eeprom_byte = address_eeprom_byte;
         //Pump enable MQTT switch
         this->mqtt_pump_enable_switch = mqtt_pump_enable_switch;
         this->mqtt_pump_enable_switch->on_state_change([this](const char* state) {
@@ -12,7 +12,6 @@ Pump::Pump(uint8_t pump_pin, MqttSwitch* mqtt_pump_enable_switch, MqttSwitch* mq
                 this->set_enabled(false);
             }
         });
-        this->mqtt_pump_enable_switch->set_boolean_state(this->enabled);
         //Pump state MQTT switch
         this->mqtt_pump_switch = mqtt_pump_switch;
         this->mqtt_pump_switch->on_state_change([this](const char* state) {
@@ -27,6 +26,15 @@ Pump::Pump(uint8_t pump_pin, MqttSwitch* mqtt_pump_enable_switch, MqttSwitch* mq
             }
         });
     }
+
+void Pump::begin(){
+    //load enabled state from EEPROM (uninitialized eeprom => Bytes = 0xFF => enabled = true)
+    this->address_eeprom_byte = address_eeprom_byte;
+    this->enabled = eeprom_read_bool(this->address_eeprom_byte, this->bit_enable_bool);
+    this->previous_enabled = this->enabled;
+    //initialize MQTT enable switch state
+    this->mqtt_pump_enable_switch->set_boolean_state(this->enabled);
+}
 
 void Pump::run_interval_cycle(OneWireTemperatureSensor *temperature_sensor, uint64_t on_duration_s, uint64_t off_duration_below_20C_s) {
     if (this->enabled && !this->previous_enabled && !this->get_state()){ //Switch on after enabling pump
@@ -95,8 +103,8 @@ int64_t Pump::get_duration_until_change_s(){
 
 void Pump::set_enabled(bool enabled){ 
     this->enabled = enabled;
-    //hier auch noch im EEPROM speichern
-    //this->mqtt_pump_enable_switch->set_boolean_state(enabled); nur senden, wenn von taster geändert, sonst loop
+    eeprom_write_bool(this->address_eeprom_byte, this->bit_enable_bool, enabled);
+    //this->mqtt_pump_enable_switch->set_boolean_state(enabled); has to be done when switch changes state
 }
 
 bool Pump::get_enabled(){
