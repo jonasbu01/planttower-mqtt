@@ -33,8 +33,8 @@ MqttSensor* mqtt_next_pump_change_sensor = new MqttSensor(
 
 MqttSensor* mqtt_temperature_sensor = new MqttSensor(
   mqtt_client,
-  "outside_temperature",
-  "Außentemperatur",
+  "temperature",
+  "Temperatur",
   "temperature",
   "°C",
   "{{ value_json.temperature }}"
@@ -134,10 +134,12 @@ void loop() {
   //print states every second
   if (time_serial_print_interval < millis()){
     Serial.println("=====================");
-    Serial.printf("Pumpe: %s (in %" PRId64 " s %s)\n", pump->get_state() ? "an" : "aus", pump->get_duration_until_change_s(), pump->get_state() ? "aus" : "an");
-    Serial.println(waterlevel_sensor->get_state()? "Wasserlevel: niedrig" : "Wasserlevel: ok");
-    Serial.println(temperature_sensor->get_error() ? "Lufttemp.: Fehler, keine Verbindung?" : String("Lufttemp.: ") + temperature_sensor->get_temperature() + " °C");
-    Serial.println(touch_button->get_state() ? "Taste: betätigt" : "Taste: nicht betätigt");
+    Serial.printf("Pump: %s (in %" PRId64 " s %s)\n", pump->get_state() ? "on" : "off", pump->get_duration_until_change_s(), pump->get_state() ? "off" : "on");
+    Serial.println(waterlevel_sensor->get_state()? "Water-Level: low" : "Water-Level: ok");
+    Serial.println(temperature_sensor->get_error() ? "Air temp.: Error, no connection?" : String("Air temp.: ") + temperature_sensor->get_temperature() + " °C");
+    Serial.println(touch_button->get_state() ? "Button: pressed" : "Button: not pressed");
+    wifi_manager.print_wifi_quality();
+    Serial.println(mqtt_device.is_connected() ? "MQTT-Broker: connected" : "MQTT-Broker: not connected");
     time_serial_print_interval = millis() + 1000;
   }
 }

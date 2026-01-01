@@ -14,6 +14,8 @@ public:
   void setup_wifi();
   void connection_loop();
   bool is_connected();
+  int get_rssi();
+  void print_wifi_quality();
 };
 
 #endif

@@ -10,7 +10,7 @@ void MqttDevice::configure_client() {
 }
 
 void MqttDevice::connect_client() {
-  if (!mqtt_client->connected() && (millis() - this->last_connection_attempt) > 1000) {
+  if (!mqtt_client->connected() && (millis() - this->last_connection_attempt) > 3000) {
     Serial.print("Attempting MQTT connection...");
     if (mqtt_client->connect(
       this->mqtt_credentials->client_id,

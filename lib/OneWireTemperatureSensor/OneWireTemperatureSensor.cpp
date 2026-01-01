@@ -7,11 +7,14 @@ OneWireTemperatureSensor::OneWireTemperatureSensor(u_int8_t pin)
 
 void OneWireTemperatureSensor::request_value(){
     this->sensor.requestTemperatures();
-    this->temperature = this->sensor.getTempCByIndex(0);
+    float sensor_value = this->sensor.getTempCByIndex(0);
     this->time_last_request = millis();
-    this->error = this->temperature == -127; //no connection
-    if (this->error){
+    if (sensor_value > 70.0 || sensor_value < -30.0){
+        this->error = true;
         this->sensor.begin();
+    }else{
+        this->error = false;
+        this->temperature = sensor_value;
     }
 }
 
