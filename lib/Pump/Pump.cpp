@@ -1,9 +1,21 @@
 #include "Pump.hpp"
 
-Pump::Pump(uint8_t pump_pin, MqttSwitch* mqtt_switch)
+Pump::Pump(uint8_t pump_pin, MqttSwitch* mqtt_pump_enable_switch, MqttSwitch* mqtt_pump_switch)
     : DigitalOutput(pump_pin) {
-        this->mqtt_switch = mqtt_switch;
-        this->mqtt_switch->on_state_change([this](const char* state) {
+        //load enabled state from EEPROM???
+        //Pump enable MQTT switch
+        this->mqtt_pump_enable_switch = mqtt_pump_enable_switch;
+        this->mqtt_pump_enable_switch->on_state_change([this](const char* state) {
+            if (strcmp(state, MqttSwitch::ON_STATE) == 0) {
+                this->set_enabled(true);
+            } else if (strcmp(state, MqttSwitch::OFF_STATE) == 0) {
+                this->set_enabled(false);
+            }
+        });
+        this->mqtt_pump_enable_switch->set_boolean_state(this->enabled);
+        //Pump state MQTT switch
+        this->mqtt_pump_switch = mqtt_pump_switch;
+        this->mqtt_pump_switch->on_state_change([this](const char* state) {
             if (strcmp(state, MqttSwitch::ON_STATE) == 0) {
                 if (!this->get_state()) {
                     this->switch_on();
@@ -17,9 +29,15 @@ Pump::Pump(uint8_t pump_pin, MqttSwitch* mqtt_switch)
     }
 
 void Pump::run_interval_cycle(OneWireTemperatureSensor *temperature_sensor, uint64_t on_duration_s, uint64_t off_duration_below_20C_s) {
-    if (temperature_sensor->get_temperature() < 2.0 && !temperature_sensor->get_error()){ //ice preventation
+    if (this->enabled && !this->previous_enabled && !this->get_state()){ //Switch on after enabling pump
+        this->switch_on();
+        this->mqtt_pump_switch->switch_on();
+    }
+    this->previous_enabled = this->enabled;
+    if ((temperature_sensor->get_temperature() < 3.0 && !temperature_sensor->get_error()) || !this->enabled){ //ice preventation / pump disabled
         if (this->get_state()){
             this->switch_off();
+            this->mqtt_pump_switch->switch_off();
         }
         this->duration_until_on_s = 0;
         this->duration_until_off_s = 0;
@@ -30,7 +48,7 @@ void Pump::run_interval_cycle(OneWireTemperatureSensor *temperature_sensor, uint
             this->duration_until_off_s = 0;
             if (this->duration_until_on_s <= 0) {
                 this->switch_on();
-                this->mqtt_switch->switch_on();
+                this->mqtt_pump_switch->switch_on();
             }
         }
         if (this->get_state()){ //on -> switch off
@@ -38,7 +56,7 @@ void Pump::run_interval_cycle(OneWireTemperatureSensor *temperature_sensor, uint
             this->duration_until_on_s = 0;
             if(this->duration_until_off_s <= 0) { 
                 this->switch_off();
-                this->mqtt_switch->switch_off();
+                this->mqtt_pump_switch->switch_off();
             }
         }
     }
@@ -73,4 +91,14 @@ int64_t Pump::get_duration_until_change_s(){
     }else{
         return this->duration_until_on_s;
     }
+}
+
+void Pump::set_enabled(bool enabled){ 
+    this->enabled = enabled;
+    //hier auch noch im EEPROM speichern
+    //this->mqtt_pump_enable_switch->set_boolean_state(enabled); nur senden, wenn von taster geändert, sonst loop
+}
+
+bool Pump::get_enabled(){
+    return this->enabled;
 }

@@ -28,6 +28,7 @@ class MqttSwitch : public MqttControl<const char*> {
   void switch_on();
   void switch_off();
   void toggle();
+  void set_boolean_state(bool state);
   bool is_on();
 
  protected:

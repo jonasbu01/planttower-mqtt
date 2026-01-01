@@ -49,23 +49,30 @@ bool LedDisplay::run_startup_animation(){
 
 void LedDisplay::display_state(Pump *pump, DigitalInput *waterlevel_sensor, OneWireTemperatureSensor *temperature_sensor, bool wifi_connected, bool mqtt_connected){
     //green led -> pump state
-    if (pump->get_state()){
+    if (pump->get_state() && pump->get_enabled()){
         this->green_led.fade_logarithmic_between_percentages(30, 100, 15, 15, 250, 250); //pump on
+    }else if (!pump->get_state() && pump->get_enabled()){
+        this->green_led.fade_logarithmic_to_percent(30, 15); //pump off (ready)
     }else{
-        this->green_led.fade_logarithmic_to_percent(30); //pump off
+        this->green_led.fade_logarithmic_to_percent(0, 10); //pump disabled
     }
     
-    //red led -> waterlevel / error state
-    if (waterlevel_sensor->get_state()){
-        this->red_led.fade_logarithmic_between_percentages(0, 100, 30, 10, 300, 200); //water level low
+    //red led -> pump disabled / waterlevel / error state
+    if (!pump->get_enabled()){
+        this->red_led.fade_logarithmic_to_percent(30, 10); //pump disabled
     }else{
-        bool error = temperature_sensor->get_error(); 
-        if (error){
-            this->red_led.fade_logarithmic_between_percentages(0, 100, 2, 2, 250, 250); //any error
+        if (waterlevel_sensor->get_state()){
+            this->red_led.fade_logarithmic_between_percentages(0, 100, 30, 10, 300, 200); //water level low
         }else{
-            this->red_led.fade_logarithmic_to_percent(0); //no error
+            bool error = temperature_sensor->get_error(); 
+            if (error){
+                this->red_led.fade_logarithmic_between_percentages(0, 100, 2, 2, 250, 250); //any error
+            }else{
+                this->red_led.fade_logarithmic_to_percent(0, 10); //no error
+            }
         }
     }
+
     //blue led -> connectivity state
     if (wifi_connected && mqtt_connected){
         this->blue_led.fade_logarithmic_to_percent(30); //all connected

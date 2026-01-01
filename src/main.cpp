@@ -44,7 +44,10 @@ MqttBinarySensor* mqtt_waterlevel_sensor = new MqttBinarySensor(
   mqtt_client,
   "water_level_low",
   "Wasserstand gering",
-  "{{ value_json.state }}"
+  "{{ value_json.state }}",
+  new std::map<std::string, std::string>{
+    {"icon", "mdi:water-alert"}
+  }
 );
 
 MqttSwitch* mqtt_pump_switch = new MqttSwitch(
@@ -59,7 +62,10 @@ MqttSwitch* mqtt_pump_switch = new MqttSwitch(
 MqttSwitch* mqtt_pump_enable_switch = new MqttSwitch(
   mqtt_client,
   "pump_enable",
-  "Freigabe Pumpe"
+  "Freigabe Pumpe",
+  new std::map<std::string, std::string>{
+    {"icon", "mdi:power"}
+  }
 );
 
 MqttCredentials mqtt_credentials = {
@@ -79,7 +85,7 @@ MqttDevice mqtt_device(
 );
 
 //Objects for hardware components
-Pump *pump = new Pump(PUMP_PIN, mqtt_pump_switch);
+Pump *pump = new Pump(PUMP_PIN, mqtt_pump_enable_switch, mqtt_pump_switch);
 DigitalInput *waterlevel_sensor = new DigitalInput(WATERLEVEL_PIN, true, true);
 OneWireTemperatureSensor *temperature_sensor = new OneWireTemperatureSensor(TEMPERATURE_PIN);
 LedDisplay *led_display = new LedDisplay(GREEN_LED_PIN, RED_LED_PIN, BLUE_LED_PIN);
@@ -121,14 +127,14 @@ void loop() {
   touch_button->refresh_state();
   temperature_sensor->request_value_by_interval(15);
   pump->run_interval_cycle(temperature_sensor, 60, 2400); //1 min = 60 s on / 40 min = 2400 s off (below 20 °C)
-  if (!pump->get_state() && pump->get_time_switched_off() + 60000 <= millis()){ //measure only when pump is >60s off
+  if (pump->get_enabled() && !pump->get_state() && pump->get_time_switched_off() + 60000 <= millis()){ //measure only when pump is >60s off and enabled
     waterlevel_sensor->refresh_state();
   }
   led_display->display_state(pump, waterlevel_sensor, temperature_sensor, wifi_manager.is_connected(), mqtt_device.is_connected());
 
   //refresh mqtt sensors (state will only be sent if value changed)
   if (time_mqtt_sensor_refresh_interval < millis()){
-    //mqtt_pump_enable_switch->switch_on(); //test publish      
+    //mqtt_pump_enable_switch->switch_on(); //test publish  
     mqtt_next_pump_change_sensor->set_state((pump->get_duration_until_change_s()/5)*5);//rounded to 5s
     mqtt_temperature_sensor->set_state(temperature_sensor->get_temperature());
     mqtt_waterlevel_sensor->set_state(waterlevel_sensor->get_state() ? MqttBinarySensor::ON_STATE : MqttBinarySensor::OFF_STATE);
@@ -137,7 +143,8 @@ void loop() {
   //print states every second
   if (time_serial_print_interval < millis()){
     Serial.println("=====================");
-    Serial.printf("Pump: %s (in %" PRId64 " s %s)\n", pump->get_state() ? "on" : "off", pump->get_duration_until_change_s(), pump->get_state() ? "off" : "on");
+    Serial.println("Pump enabled: " + String(pump->get_enabled() ? "yes" : "no"));
+    Serial.printf("Pump state: %s (in %" PRId64 " s %s)\n", pump->get_state() ? "on" : "off", pump->get_duration_until_change_s(), pump->get_state() ? "off" : "on");
     Serial.println(waterlevel_sensor->get_state()? "Water-Level: low" : "Water-Level: ok");
     Serial.println(temperature_sensor->get_error() ? "Air temp.: Error, no connection?" : String("Air temp.: ") + temperature_sensor->get_temperature() + " °C");
     Serial.println(touch_button->get_state() ? "Button: pressed" : "Button: not pressed");

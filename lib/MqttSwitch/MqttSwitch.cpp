@@ -61,6 +61,14 @@ void MqttSwitch::switch_off() {
   this->state_change_callback(this->state);
 }
 
+void MqttSwitch::set_boolean_state(bool state) {
+  if (state) {
+    this->switch_on();
+  } else {
+    this->switch_off();
+  }
+}
+
 bool MqttSwitch::is_on() {
   return strcmp(this->state, MqttSwitch::ON_STATE) == 0;
 }
