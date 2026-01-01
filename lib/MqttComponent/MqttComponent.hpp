@@ -19,6 +19,10 @@ class MqttComponent : public MqttEntity {
 
   virtual void append_discovery_config(JsonObject* config) = 0;
 
+  virtual ~MqttComponent() {
+    delete this->additional_discovery_config;
+  }
+
  protected:
   std::map<std::string, std::string>* additional_discovery_config;
 
