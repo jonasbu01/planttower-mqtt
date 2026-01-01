@@ -10,6 +10,7 @@ void MqttSwitch::append_discovery_config(JsonObject* config) {
   (*config)["platform"] = this->MqttStatefulComponent::platform;
   (*config)["state_topic"] = this->state_topic;
   (*config)["command_topic"] = this->command_topic;
+  this->append_additional_discovery_config(config);
 }
 
 void MqttSwitch::handle_message(char* message) {

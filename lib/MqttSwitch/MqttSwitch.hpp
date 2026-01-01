@@ -14,8 +14,9 @@ class MqttSwitch : public MqttControl<const char*> {
   MqttSwitch(
     PubSubClient* mqtt_client,
     const char* unique_id,
-    const char* name
-  ): MqttControl<const char*>(mqtt_client, unique_id, name, "switch") {
+    const char* name,
+    std::map<std::string, std::string>* additional_discovery_config = new std::map<std::string, std::string>()
+  ): MqttControl<const char*>(mqtt_client, unique_id, name, "switch", additional_discovery_config) {
     this->state = MqttSwitch::OFF_STATE;
   }
   bool equals_current_state(const char* other_state) override;

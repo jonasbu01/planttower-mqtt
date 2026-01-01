@@ -10,8 +10,9 @@ class MqttControl : public MqttStatefulComponent<T> {
     PubSubClient* mqtt_client,
     const char* unique_id,
     const char* name,
-    const char* platform
-  ): MqttStatefulComponent<const char*>(mqtt_client, unique_id, name, platform) {
+    const char* platform,
+    std::map<std::string, std::string>* additional_discovery_config = new std::map<std::string, std::string>()
+  ): MqttStatefulComponent<const char*>(mqtt_client, unique_id, name, platform, additional_discovery_config) {
       snprintf(this->command_topic, 256, "homeassistant/%s/%s/set", platform, unique_id);
     }
 

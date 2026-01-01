@@ -24,7 +24,7 @@ void MqttDevice::connect_client() {
       this->subscribe_command_topics();
       this->publish_all_states();
     } else {
-      Serial.printf("failed, rc=%d try again in 1s\n", mqtt_client->state());
+      Serial.printf("failed, rc=%d try again in 3s\n", mqtt_client->state());
     }
     this->last_connection_attempt = millis();
   }

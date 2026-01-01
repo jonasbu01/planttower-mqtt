@@ -15,8 +15,9 @@ class MqttBinarySensor : public MqttStatefulComponent<const char*> {
     PubSubClient* mqtt_client,
     const char* unique_id,
     const char* name,
-    const char* value_template
-  ): MqttStatefulComponent<const char*>(mqtt_client, unique_id, name, "binary_sensor"),
+    const char* value_template,
+    std::map<std::string, std::string>* additional_discovery_config = new std::map<std::string, std::string>()
+  ): MqttStatefulComponent<const char*>(mqtt_client, unique_id, name, "binary_sensor", additional_discovery_config),
     value_template(value_template) {
       this->state = OFF_STATE;
     }

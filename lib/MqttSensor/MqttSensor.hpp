@@ -14,8 +14,9 @@ class MqttSensor : public MqttStatefulComponent<float> {
     const char* name,
     const char* device_class,
     const char* unit,
-    const char* value_template
-  ): MqttStatefulComponent<float>(mqtt_client, unique_id, name, "sensor"),
+    const char* value_template,
+    std::map<std::string, std::string>* additional_discovery_config = new std::map<std::string, std::string>()
+  ): MqttStatefulComponent<float>(mqtt_client, unique_id, name, "sensor", additional_discovery_config),
     device_class(device_class),
     unit(unit),
     value_template(value_template) {}

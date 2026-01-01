@@ -50,7 +50,10 @@ MqttBinarySensor* mqtt_waterlevel_sensor = new MqttBinarySensor(
 MqttSwitch* mqtt_pump_switch = new MqttSwitch(
   mqtt_client,
   "pump",
-  "Pumpe"
+  "Pumpe",
+  new std::map<std::string, std::string>{
+    {"icon", "mdi:pump"}
+  }
 );
 
 MqttSwitch* mqtt_pump_enable_switch = new MqttSwitch(

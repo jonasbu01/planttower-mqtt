@@ -13,8 +13,9 @@ class MqttStatefulComponent : public MqttComponent {
     PubSubClient* mqtt_client,
     const char* unique_id,
     const char* name,
-    const char* platform
-  ): MqttComponent(mqtt_client, unique_id, name, platform) {}
+    const char* platform,
+    std::map<std::string, std::string>* additional_discovery_config = new std::map<std::string, std::string>()
+  ): MqttComponent(mqtt_client, unique_id, name, platform, additional_discovery_config) {}
 
   virtual void append_discovery_config(JsonObject* config) = 0;
   void set_state(T state) {
