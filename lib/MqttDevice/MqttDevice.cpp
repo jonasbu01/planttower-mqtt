@@ -56,6 +56,14 @@ MqttDevice* MqttDevice::register_component(MqttComponent* component) {
   return this;
 }
 
+void MqttDevice::load_persistent_settings() {
+  Serial.println("Loading persistent settings...");
+  for (const auto& entry : *this->components_registry) {
+    MqttComponent* component = entry.second;
+    component->load_persistent_settings();
+  }
+}
+
 void MqttDevice::send_discovery() {
   JsonDocument payload;
   payload["state_topic"] = this->state_topic;

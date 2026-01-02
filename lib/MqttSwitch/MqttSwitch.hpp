@@ -15,11 +15,14 @@ class MqttSwitch : public MqttControl<const char*> {
     PubSubClient* mqtt_client,
     const char* unique_id,
     const char* name,
-    std::map<std::string, std::string>* additional_discovery_config = new std::map<std::string, std::string>()
+    std::map<std::string, std::string>* additional_discovery_config = new std::map<std::string, std::string>(),
+    Bools persistent_settings_key = Bools::None
   ): MqttControl<const char*>(mqtt_client, unique_id, name, "switch", additional_discovery_config) {
     this->state = MqttSwitch::OFF_STATE;
+    this->persistent_settings_key = persistent_settings_key;
   }
   bool equals_current_state(const char* other_state) override;
+  void load_persistent_settings() override;
   void append_discovery_config(JsonObject* config) override;
   void handle_message(char* message) override;
 
@@ -37,6 +40,7 @@ class MqttSwitch : public MqttControl<const char*> {
 
  private:
   std::function<void(const char*)> state_change_callback = [](const char*){};
+  Bools persistent_settings_key;
 };
 
 #endif

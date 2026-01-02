@@ -38,6 +38,7 @@ class MqttDevice : public MqttEntity {
   boolean is_connected();
 
   MqttDevice* register_component(MqttComponent* component);
+  void load_persistent_settings();
   void subscribe_command_topics();
   void send_discovery();
   void publish_all_states();

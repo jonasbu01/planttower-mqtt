@@ -10,7 +10,6 @@
 #include "MqttBinarySensor.hpp"
 #include "MqttSwitch.hpp"
 //Hardware Components
-#include "EepromUtils.hpp"
 #include "HardwarePinConfig.h"
 #include "DigitalInput.hpp"
 #include "AnalogInput.hpp"
@@ -66,7 +65,8 @@ MqttSwitch* mqtt_pump_enable_switch = new MqttSwitch(
   "Freigabe Pumpe",
   new std::map<std::string, std::string>{
     {"icon", "mdi:power"}
-  }
+  },
+  Bools::PumpEnabled
 );
 
 MqttCredentials mqtt_credentials = {
@@ -86,7 +86,7 @@ MqttDevice mqtt_device(
 );
 
 //Objects for hardware components
-Pump *pump = new Pump(PUMP_PIN, 0, mqtt_pump_enable_switch, mqtt_pump_switch);
+Pump *pump = new Pump(PUMP_PIN, mqtt_pump_enable_switch, mqtt_pump_switch);
 DigitalInput *waterlevel_sensor = new DigitalInput(WATERLEVEL_PIN, true, true);
 OneWireTemperatureSensor *temperature_sensor = new OneWireTemperatureSensor(TEMPERATURE_PIN);
 LedDisplay *led_display = new LedDisplay(GREEN_LED_PIN, RED_LED_PIN, BLUE_LED_PIN);
@@ -107,7 +107,7 @@ void handle_connections(){
 }
 
 void setup() {
-  eeprom_begin();
+  nvs.begin("esp32");
   Serial.begin(115200);
   delay(10);
   wifi_manager.setup_wifi();
@@ -117,7 +117,8 @@ void setup() {
     ->register_component(mqtt_waterlevel_sensor)
     ->register_component(mqtt_pump_switch)
     ->register_component(mqtt_pump_enable_switch);
-  pump->begin();
+  mqtt_device.load_persistent_settings();
+
   temperature_sensor->request_value();
   while(!led_display->run_startup_animation());
   mqtt_pump_switch->switch_on(); //initial state at startup (if pump enabled)

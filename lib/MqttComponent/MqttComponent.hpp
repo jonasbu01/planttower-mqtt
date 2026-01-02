@@ -4,6 +4,7 @@
 #include <map>
 #include <ArduinoJson.h>
 #include "MqttEntity.hpp"
+#include "PersistentSettings.hpp"
 
 class MqttComponent : public MqttEntity {
  public:
@@ -18,6 +19,7 @@ class MqttComponent : public MqttEntity {
   }
 
   virtual void append_discovery_config(JsonObject* config) = 0;
+  virtual void load_persistent_settings() {};
 
   virtual ~MqttComponent() {
     delete this->additional_discovery_config;

@@ -4,6 +4,20 @@ bool MqttSwitch::equals_current_state(const char* other_state) {
   return strcmp(this->state, other_state) == 0;
 }
 
+void MqttSwitch::load_persistent_settings() {
+  if (this->persistent_settings_key != Bools::None) {
+    if (bool_settings.getValue(this->persistent_settings_key)) {
+      this->switch_on();
+      Serial.print("Loaded state ON for ");
+      Serial.println(this->unique_id);
+    } else {
+      this->switch_off();
+      Serial.print("Loaded state OFF for ");
+      Serial.println(this->unique_id);
+    }
+  }
+}
+
 void MqttSwitch::append_discovery_config(JsonObject* config) {
   (*config)["name"] = this->MqttStatefulComponent::name;
   (*config)["unique_id"] = this->MqttStatefulComponent::unique_id;
@@ -52,11 +66,17 @@ void MqttSwitch::toggle() {
 }
 
 void MqttSwitch::switch_on() {
+  if (this->persistent_settings_key != Bools::None) {
+    bool_settings.setValue(this->persistent_settings_key, true);
+  }
   this->set_state(MqttSwitch::ON_STATE);
   this->state_change_callback(this->state);
 }
 
 void MqttSwitch::switch_off() {
+  if (this->persistent_settings_key != Bools::None) {
+    bool_settings.setValue(this->persistent_settings_key, false);
+  }
   this->set_state(MqttSwitch::OFF_STATE);
   this->state_change_callback(this->state);
 }
