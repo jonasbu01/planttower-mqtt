@@ -5,22 +5,24 @@
 
 #define BOOLS(X) \
   X(None, "None", false, false) \
-  X(ConnectionTested, "Wifi and MQTT was tested", false, false) \
-  X(PumpEnabled, "Is pump enabled", true, false)
+  X(APMode, "StartAPMode", false, false) \
+  X(ConTested, "ConTested", false, false) \
+  X(ConChanged, "ConChange", false, false) \
+  X(PumpEnabled, "PumpEnabled", true, false)
 
 #define INTEGERS(X) \
   X(None, "None", 0, false) \
-  X(MQTTPORT, "MQTT Port", 1883, false)
+  X(MQTTPORT, "MQTTPort", 1883, false)
 
 #define STRINGS(X) \
   X(None, "None", "", true) \
-  X(WIFISSID, "Wifi SSID", "", true) \
-  X(WIFIPASSWORD, "Wifi Password", "", true) \
-  X(MQTTSERVER, "MQTT Server", "", true) \
-  X(MQTTUSER, "MQTT User", "", true) \
-  X(MQTTPASSWORD, "MQTT Password", "", true) \
-  X(MQTTDEVICENAME, "MQTT Device Name", "", true) \
-  X(MQTTDEVICEID, "MQTT Device ID", "", true)
+  X(WIFISSID, "WifiSSID", "", true) \
+  X(WIFIPASSWORD, "WifiPassword", "", true) \
+  X(MQTTSERVER, "MQTTServer", "", true) \
+  X(MQTTUSER, "MQTTUser", "", true) \
+  X(MQTTPASSWORD, "MQTTPassword", "", true) \
+  X(MQTTDEVICENAME, "MQTTDeviceName", "", true) \
+  X(MQTTDEVICEID, "MQTTDeviceID", "", true)
 
 enum class Bools : uint8_t { BOOLS(SETTINGS_EXPAND_ENUM_CLASS) };
 enum class Integers : uint8_t { INTEGERS(SETTINGS_EXPAND_ENUM_CLASS) };

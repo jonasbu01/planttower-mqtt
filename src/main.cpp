@@ -93,6 +93,7 @@ DigitalInput *waterlevel_sensor = new DigitalInput(WATERLEVEL_PIN, true, true);
 OneWireTemperatureSensor *temperature_sensor = new OneWireTemperatureSensor(TEMPERATURE_PIN);
 LedDisplay *led_display = new LedDisplay(GREEN_LED_PIN, RED_LED_PIN, BLUE_LED_PIN);
 DigitalInput *touch_button = new DigitalInput(TOUCH_PIN, true, false);
+DigitalInput *reset_connectivity_button = new DigitalInput(RESET_CONNECTIVITY_PIN, true, true);
 
 //Timing variables
 uint64_t time_serial_print_interval = 0;
@@ -112,9 +113,6 @@ void setup() {
   mqtt_device.load_persistent_settings();
   connection_manager.set_mqtt_device(mqtt_client, &mqtt_device);
   temperature_sensor->request_value();
-
-  // Test Wert setzen
-  //string_settings.setValue(Strings::MQTTUSER, "USER123");
   
   while(!led_display->run_startup_animation()); //wait 2-3s until animation done
   mqtt_pump_switch->switch_on(); //initial state at startup (if pump enabled)
@@ -122,6 +120,11 @@ void setup() {
 
 void loop() {
   connection_manager.loop();
+  //reset connectivity button
+  reset_connectivity_button->refresh_state();
+  if(reset_connectivity_button->rising_edge()){
+    connection_manager.restart_in_ap_mode();
+  }
 
   //refresh hardware components
   touch_button->refresh_state();
@@ -133,8 +136,7 @@ void loop() {
   led_display->display_state(pump, waterlevel_sensor, temperature_sensor, connection_manager.get_wifi_connected(), mqtt_device.is_connected());
 
   //refresh mqtt sensors (state will only be sent if value changed)
-  if (time_mqtt_sensor_refresh_interval < millis()){
-    //mqtt_pump_enable_switch->switch_on(); //test publish  
+  if (time_mqtt_sensor_refresh_interval < millis() && mqtt_device.is_connected()) {
     mqtt_next_pump_change_sensor->set_state((pump->get_duration_until_change_s()/5)*5);//rounded to 5s
     mqtt_temperature_sensor->set_state(temperature_sensor->get_temperature());
     mqtt_waterlevel_sensor->set_state(waterlevel_sensor->get_state() ? MqttBinarySensor::ON_STATE : MqttBinarySensor::OFF_STATE);
@@ -147,7 +149,7 @@ void loop() {
     Serial.printf("Pump state: %s (in %" PRId64 " s %s)\n", pump->get_state() ? "on" : "off", pump->get_duration_until_change_s(), pump->get_state() ? "off" : "on");
     Serial.println(waterlevel_sensor->get_state()? "Water-Level: low" : "Water-Level: ok");
     Serial.println(temperature_sensor->get_error() ? "Air temp.: Error, no connection?" : String("Air temp.: ") + temperature_sensor->get_temperature() + " °C");
-    Serial.println(touch_button->get_state() ? "Button: pressed" : "Button: not pressed");
+    //Serial.println(touch_button->get_state() ? "Button: pressed" : "Button: not pressed");
     connection_manager.print_status();
     time_serial_print_interval = millis() + 1000;
   }

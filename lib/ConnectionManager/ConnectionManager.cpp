@@ -3,8 +3,13 @@
 ConnectionManager::ConnectionManager() {}
 
 void ConnectionManager::init() {
-    this->wifi_manager.setup_wifi();
     this->load_persistent_settings();
+    if (this->ap_mode) {
+        this->wifi_manager.ap_mode_start();
+        bool_settings.setValue(Bools::APMode, false); //for next restart
+    }else{
+        this->wifi_manager.setup_wifi();
+    }
 }
 
 void ConnectionManager::set_mqtt_device(PubSubClient* client, MqttDevice* device) {
@@ -13,10 +18,14 @@ void ConnectionManager::set_mqtt_device(PubSubClient* client, MqttDevice* device
 }
 
 void ConnectionManager::load_persistent_settings() {
-    Serial.println("===== Lade persistente Verbindungseinstellungen... =====");
+    Serial.println("===== Load persistent Connection Settings... =====");
     //Helper: ConnectionTested
-    this->connection_tested = bool_settings.getValue(Bools::ConnectionTested);
+    this->connection_tested = bool_settings.getValue(Bools::ConTested);
     Serial.printf("'ConnectionTested': %s\n", this->connection_tested ? "true" : "false");
+    this->connection_changed = bool_settings.getValue(Bools::ConChanged);
+    Serial.printf("'ConnectionChanged': %s\n", this->connection_changed ? "true" : "false");
+    this->ap_mode = bool_settings.getValue(Bools::APMode);
+    Serial.printf("'APMode': %s\n", this->ap_mode ? "true" : "false");
     //Wifi
     if (getStringSettingSafe(Strings::WIFISSID, this->wifi_ssid, sizeof(this->wifi_ssid))) {
         Serial.printf("'Wifi SSID': %s\n", this->wifi_ssid);
@@ -43,23 +52,51 @@ void ConnectionManager::load_persistent_settings() {
     if (getStringSettingSafe(Strings::MQTTDEVICEID, this->mqtt_device_id, sizeof(this->mqtt_device_id))) {
         Serial.printf("'MQTT Device ID': %s\n", this->mqtt_device_id);
     }
-    Serial.println("================ Einstellungen geladen =================");
+    Serial.println("================ Settings loaded =================");
 }
 
 void ConnectionManager::loop() {
-    //Wenn connection tested, dann normaler Betrieb
-    
-    //wenn connection nicht getestet, dann Verbindung aufbauen und testen -> 60s Timeout, dann Aus
-    
-    //wenn Reset -> AP Mode (mit Timeout 10 min?)
-    
-    //WIFI
-    wifi_manager.connection_loop();
-    //MQTT
-    if (!this->mqtt_device->is_connected() && wifi_manager.is_connected()) { 
-        this->mqtt_device->connect_client();
+    if (this->ap_mode) {
+        //AP Mode
+        this->wifi_manager.ap_mode_loop();
+        if (millis() > this->TIMEOUT_AP_MODE_MS) {
+            Serial.println("AP-Mode Timeout reached. Restart...");
+            ESP.restart();
+        }
+    }else if(!this->connection_changed && !this->connection_tested){
+        //WIFI disabled
+        return;
+    }else{
+        //normal mode / testing
+        //WIFI
+        this->wifi_manager.connection_loop();
+        //MQTT
+        if (!this->mqtt_device->is_connected() && this->wifi_manager.is_connected()) { 
+            this->mqtt_device->connect_client();
+        }
+        this->mqtt_client->loop();
+        //Helper Variables
+        if(!this->connection_tested && this->wifi_manager.is_connected() && this->mqtt_device->is_connected()){
+            Serial.println("Connection successful with new settings.");
+            bool_settings.setValue(Bools::ConTested, true);
+            bool_settings.setValue(Bools::ConChanged, false);
+            this->connection_tested = true;
+            this->connection_changed = false;
+        }
+        if(this->connection_changed && (!this->wifi_manager.is_connected() || !this->mqtt_device->is_connected()) && millis() > this->TIMEOUT_TEST_CONNECTION_MS){
+            Serial.println("No connection could be established with the new settings. Stopping WIFI.");
+            bool_settings.setValue(Bools::ConChanged, false);
+            bool_settings.setValue(Bools::ConTested, false);
+            this->connection_changed = false;
+            this->connection_tested = false;
+        }
     }
-    this->mqtt_client->loop();
+}
+
+void ConnectionManager::restart_in_ap_mode() {
+    Serial.println("Restart in AP-Mode...");
+    bool_settings.setValue(Bools::APMode, true);
+    ESP.restart();
 }
 
 bool ConnectionManager::get_wifi_connected() {
@@ -67,6 +104,20 @@ bool ConnectionManager::get_wifi_connected() {
 }
 
 void ConnectionManager::print_status() {
-    this->wifi_manager.print_wifi_quality();
-    Serial.println(mqtt_device->is_connected() ? "MQTT-Broker: connected" : "MQTT-Broker: not connected");
+    if (this->ap_mode) {
+        //AP Mode
+        Serial.println("WiFi AP-Mode activated (Timeout: " + String((this->TIMEOUT_AP_MODE_MS - (millis() % this->TIMEOUT_AP_MODE_MS)) / 1000) + " s)");
+    }else if(!this->connection_changed && !this->connection_tested){
+        //WIFI disabled
+        Serial.println("WiFi deactivated");
+        return;
+    }else{
+        //normal mode / testing
+        Serial.println("WiFi activated");
+        if(this->connection_changed && (!this->wifi_manager.is_connected() || !this->mqtt_device->is_connected()) && millis()){
+            Serial.println("Connection settings changed, try to connect (Timeout: " + String((this->TIMEOUT_TEST_CONNECTION_MS - (millis() % this->TIMEOUT_TEST_CONNECTION_MS)) / 1000) + " s)");
+        }
+        this->wifi_manager.print_wifi_quality();
+        Serial.println(mqtt_device->is_connected() ? "MQTT-Broker: connected" : "MQTT-Broker: not connected");
+    }
 }

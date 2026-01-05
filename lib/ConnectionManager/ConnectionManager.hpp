@@ -12,6 +12,10 @@ private:
     PubSubClient* mqtt_client;
     MqttDevice* mqtt_device;
     bool connection_tested = false;
+    bool connection_changed = false;
+    bool ap_mode = false;
+    uint64_t TIMEOUT_AP_MODE_MS = 600000; //10 minutes
+    uint64_t TIMEOUT_TEST_CONNECTION_MS = 120000; //2 minutes
     char wifi_ssid[64];
     char wifi_password[64];
     char mqtt_server[64];
@@ -27,6 +31,7 @@ public:
   void init();
   void set_mqtt_device(PubSubClient* client, MqttDevice* device);
   void loop();
+  void restart_in_ap_mode();
   bool get_wifi_connected();
   void print_status();
 };

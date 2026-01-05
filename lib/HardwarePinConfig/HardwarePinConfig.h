@@ -9,5 +9,6 @@
 #define RED_LED_PIN 26 
 #define BLUE_LED_PIN 33
 #define GREEN_LED_PIN 32
+#define RESET_CONNECTIVITY_PIN 0 //Boot Button as test
 
 #endif
