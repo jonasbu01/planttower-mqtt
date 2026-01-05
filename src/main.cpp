@@ -1,9 +1,10 @@
 #include "Arduino.h"
-#include "WifiManager.hpp"
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include <vector>
-//MQTT Components
+//Connection
+#include "ConnectionManager.hpp"
+//MQTT
 #include "MqttDevice.hpp"
 #include "MqttComponent.hpp"
 #include "MqttSensor.hpp"
@@ -17,7 +18,8 @@
 #include "Pump.hpp"
 #include "LedDisplay.hpp"
 
-WifiManager wifi_manager;
+
+ConnectionManager connection_manager;
 WiFiClient wifi_client;
 PubSubClient* mqtt_client = new PubSubClient(wifi_client);
 
@@ -96,21 +98,11 @@ DigitalInput *touch_button = new DigitalInput(TOUCH_PIN, true, false);
 uint64_t time_serial_print_interval = 0;
 uint64_t time_mqtt_sensor_refresh_interval = 0;
 
-void handle_connections(){
-  //WIFI
-  wifi_manager.connection_loop();
-  //MQTT
-  if (!mqtt_device.is_connected() && wifi_manager.is_connected()) { 
-    mqtt_device.connect_client();
-  }
-  mqtt_client->loop();
-}
-
 void setup() {
   nvs.begin("esp32");
   Serial.begin(115200);
   delay(10);
-  wifi_manager.setup_wifi();
+  connection_manager.init();
   mqtt_device.configure_client();
   mqtt_device.register_component(mqtt_next_pump_change_sensor)
     ->register_component(mqtt_temperature_sensor)
@@ -118,14 +110,18 @@ void setup() {
     ->register_component(mqtt_pump_switch)
     ->register_component(mqtt_pump_enable_switch);
   mqtt_device.load_persistent_settings();
-
+  connection_manager.set_mqtt_device(mqtt_client, &mqtt_device);
   temperature_sensor->request_value();
-  while(!led_display->run_startup_animation());
+
+  // Test Wert setzen
+  //string_settings.setValue(Strings::MQTTUSER, "USER123");
+  
+  while(!led_display->run_startup_animation()); //wait 2-3s until animation done
   mqtt_pump_switch->switch_on(); //initial state at startup (if pump enabled)
 }
 
 void loop() {
-  handle_connections();
+  connection_manager.loop();
 
   //refresh hardware components
   touch_button->refresh_state();
@@ -134,7 +130,7 @@ void loop() {
   if (pump->get_enabled() && !pump->get_state() && pump->get_time_switched_off() + 60000 <= millis()){ //measure only when pump is >60s off and enabled
     waterlevel_sensor->refresh_state();
   }
-  led_display->display_state(pump, waterlevel_sensor, temperature_sensor, wifi_manager.is_connected(), mqtt_device.is_connected());
+  led_display->display_state(pump, waterlevel_sensor, temperature_sensor, connection_manager.get_wifi_connected(), mqtt_device.is_connected());
 
   //refresh mqtt sensors (state will only be sent if value changed)
   if (time_mqtt_sensor_refresh_interval < millis()){
@@ -146,14 +142,13 @@ void loop() {
   }
   //print states every second
   if (time_serial_print_interval < millis()){
-    Serial.println("=====================");
+    Serial.println("===============================");
     Serial.println("Pump enabled: " + String(pump->get_enabled() ? "enabled" : "disabled"));
     Serial.printf("Pump state: %s (in %" PRId64 " s %s)\n", pump->get_state() ? "on" : "off", pump->get_duration_until_change_s(), pump->get_state() ? "off" : "on");
     Serial.println(waterlevel_sensor->get_state()? "Water-Level: low" : "Water-Level: ok");
     Serial.println(temperature_sensor->get_error() ? "Air temp.: Error, no connection?" : String("Air temp.: ") + temperature_sensor->get_temperature() + " °C");
     Serial.println(touch_button->get_state() ? "Button: pressed" : "Button: not pressed");
-    wifi_manager.print_wifi_quality();
-    Serial.println(mqtt_device.is_connected() ? "MQTT-Broker: connected" : "MQTT-Broker: not connected");
+    connection_manager.print_status();
     time_serial_print_interval = millis() + 1000;
   }
 }

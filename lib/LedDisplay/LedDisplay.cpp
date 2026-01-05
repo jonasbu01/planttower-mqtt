@@ -9,7 +9,7 @@ bool LedDisplay::run_startup_animation(){
     const uint8_t MAX_PERCENTAGE = 50;
     const uint8_t SWITCH_TO_NEXT_PERCENTAGE_UP = 16;
     const uint8_t SWITCH_TO_NEXT_PERCENTAGE_DOWN = MAX_PERCENTAGE - SWITCH_TO_NEXT_PERCENTAGE_UP;
-    const uint16_t INTERVAL_MS = 15;
+    const uint16_t INTERVAL_MS = 12;
     const uint8_t LOOPS = 3;
 
     if (!this->startup_animation_finished){
@@ -25,6 +25,7 @@ bool LedDisplay::run_startup_animation(){
             }
             if (this->blue_led.get_current_percentage() >= MAX_PERCENTAGE){
                 this->startup_animation_step++;
+                Serial.printf("Startup Animation %d %%\n", this->startup_animation_step * 100 / (LOOPS * 2));
             }
             break;
         case 1: //fade leds down
@@ -37,6 +38,7 @@ bool LedDisplay::run_startup_animation(){
             }
             if (this->blue_led.get_current_percentage() == 0){
                 this->startup_animation_step++;
+                Serial.printf("Startup Animation %d %%\n", this->startup_animation_step * 100 / (LOOPS * 2));
             }
             break;
         default:

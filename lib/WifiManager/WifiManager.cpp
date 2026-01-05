@@ -4,7 +4,6 @@ WifiManager::WifiManager() {}
 
 void WifiManager::setup_wifi() {
     WiFi.setSleep(false);
-    this->connection_loop();
 }
 
 void WifiManager::connection_loop() {

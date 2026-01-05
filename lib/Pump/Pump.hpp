@@ -9,8 +9,6 @@
 class Pump : public DigitalOutput {
 private:
     bool enabled = true;
-    bool previous_enabled = true;
-    bool function_test_ok = true;
     int64_t duration_until_on_s = 0;
     int64_t duration_until_off_s = 0;
     MqttSwitch* mqtt_pump_enable_switch;
