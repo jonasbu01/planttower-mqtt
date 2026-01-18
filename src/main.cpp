@@ -18,6 +18,8 @@
 #include "Pump.hpp"
 #include "LedDisplay.hpp"
 
+#include "Secrets.hpp"
+
 
 ConnectionManager connection_manager;
 WiFiClient wifi_client;
@@ -122,7 +124,7 @@ void loop() {
   connection_manager.loop();
   //reset connectivity button
   reset_connectivity_button->refresh_state();
-  if(reset_connectivity_button->rising_edge()){
+  if(reset_connectivity_button->get_state() && reset_connectivity_button->get_duration_ms_state_changed() > 3000){ // hold for 3s
     connection_manager.restart_in_ap_mode();
   }
 
@@ -133,7 +135,7 @@ void loop() {
   if (pump->get_enabled() && !pump->get_state() && pump->get_time_switched_off() + 60000 <= millis()){ //measure only when pump is >60s off and enabled
     waterlevel_sensor->refresh_state();
   }
-  led_display->display_state(pump, waterlevel_sensor, temperature_sensor, connection_manager.get_wifi_connected(), mqtt_device.is_connected());
+  led_display->display_state(pump, waterlevel_sensor, temperature_sensor, connection_manager.get_state());
 
   //refresh mqtt sensors (state will only be sent if value changed)
   if (time_mqtt_sensor_refresh_interval < millis() && mqtt_device.is_connected()) {

@@ -8,7 +8,8 @@ void ConnectionManager::init() {
         this->wifi_manager.ap_mode_start();
         bool_settings.setValue(Bools::APMode, false); //for next restart
     }else{
-        this->wifi_manager.setup_wifi();
+        this->wifi_manager.setup_wifi(this->wifi_ssid, this->wifi_password);
+        //setup mqtt client secrets
     }
 }
 
@@ -55,18 +56,30 @@ void ConnectionManager::load_persistent_settings() {
     Serial.println("================ Settings loaded =================");
 }
 
-void ConnectionManager::loop() {
+void ConnectionManager::set_state() {
     if (this->ap_mode) {
-        //AP Mode
+        this->state = AP_MODE;
+    }else if(!this->connection_changed && !this->connection_tested){
+        this->state = DEACTIVATED;
+    }else if(!this->wifi_manager.is_connected()){
+        this->state = DISCONNECTED;
+    }else if(this->wifi_manager.is_connected() && !this->mqtt_device->is_connected()){
+        this->state = WIFI_CONNECTED;
+    }else if(this->wifi_manager.is_connected() && this->mqtt_device->is_connected()){
+        this->state = WIFI_MQTT_CONNECTED;
+    }
+}
+
+void ConnectionManager::loop() {
+    this->set_state();
+
+    if (this->state == AP_MODE) {
         this->wifi_manager.ap_mode_loop();
         if (millis() > this->TIMEOUT_AP_MODE_MS) {
             Serial.println("AP-Mode Timeout reached. Restart...");
             ESP.restart();
         }
-    }else if(!this->connection_changed && !this->connection_tested){
-        //WIFI disabled
-        return;
-    }else{
+    }else if(this->state != DEACTIVATED){
         //normal mode / testing
         //WIFI
         this->wifi_manager.connection_loop();
@@ -103,12 +116,14 @@ bool ConnectionManager::get_wifi_connected() {
     return this->wifi_manager.is_connected();
 }
 
+Connectionstate ConnectionManager::get_state() {
+    return this->state;
+}
+
 void ConnectionManager::print_status() {
-    if (this->ap_mode) {
-        //AP Mode
+    if (this->state == AP_MODE) {
         Serial.println("WiFi AP-Mode activated (Timeout: " + String((this->TIMEOUT_AP_MODE_MS - (millis() % this->TIMEOUT_AP_MODE_MS)) / 1000) + " s)");
-    }else if(!this->connection_changed && !this->connection_tested){
-        //WIFI disabled
+    }else if(this->state == DEACTIVATED){
         Serial.println("WiFi deactivated");
         return;
     }else{

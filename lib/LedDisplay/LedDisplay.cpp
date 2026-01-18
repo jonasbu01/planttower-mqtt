@@ -49,7 +49,7 @@ bool LedDisplay::run_startup_animation(){
     return this->startup_animation_finished;
 }
 
-void LedDisplay::display_state(Pump *pump, DigitalInput *waterlevel_sensor, OneWireTemperatureSensor *temperature_sensor, bool wifi_connected, bool mqtt_connected){
+void LedDisplay::display_state(Pump *pump, DigitalInput *waterlevel_sensor, OneWireTemperatureSensor *temperature_sensor, Connectionstate connection_state){
     //green led -> pump state
     if (pump->get_state() && pump->get_enabled()){
         this->green_led.fade_logarithmic_between_percentages(30, 100, 15, 15, 250, 250); //pump on
@@ -76,11 +76,15 @@ void LedDisplay::display_state(Pump *pump, DigitalInput *waterlevel_sensor, OneW
     }
 
     //blue led -> connectivity state
-    if (wifi_connected && mqtt_connected){
-        this->blue_led.fade_logarithmic_to_percent(30); //all connected
-    }else if (wifi_connected && !mqtt_connected){
-        this->blue_led.fade_logarithmic_between_percentages(30, 100, 8, 8, 100, 100); //wifi connected, mqtt not
-    }else{
-        this->blue_led.fade_logarithmic_between_percentages(0, 100, 30, 30, 500, 500); //no connection
+    if (connection_state == WIFI_MQTT_CONNECTED){
+        this->blue_led.fade_logarithmic_to_percent(30); //led permanent on
+    }else if (connection_state == DISCONNECTED){
+        this->blue_led.fade_logarithmic_between_percentages(0, 100, 30, 30, 500, 500); //led slow fading
+    }else if (connection_state == WIFI_CONNECTED){
+        this->blue_led.fade_logarithmic_between_percentages(30, 100, 8, 8, 100, 100); //led fast fading
+    }else if (connection_state == AP_MODE){
+        this->blue_led.fade_logarithmic_between_percentages(0, 100, 3, 3, 250, 250); //toggle led
+    }else if (connection_state == DEACTIVATED){
+        this->blue_led.fade_logarithmic_to_percent(0, 10); //led off
     }
 }

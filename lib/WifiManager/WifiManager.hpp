@@ -4,7 +4,6 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include <DNSServer.h>
-#include "Secrets.hpp" //muss noch zu Persistent Settings geändert werden
 #include "HTMLPages.hpp"
 #include "PersistentSettings.hpp"
 
@@ -15,6 +14,8 @@ private:
     bool previous_connection_status = false;
     const char* AP_SSID = "ESP32-Setup";
     const char* AP_PASS = "12345678";
+    char wifi_ssid[64];
+    char wifi_password[64];
     IPAddress apIP;
     IPAddress netMsk;
     DNSServer dnsServer;
@@ -25,7 +26,7 @@ private:
     void ap_handle_captive_portal();
 public:
   WifiManager();
-  void setup_wifi();
+  void setup_wifi(const char* ssid, const char* password);
   void connection_loop();
   void ap_mode_start();
   void ap_mode_loop();

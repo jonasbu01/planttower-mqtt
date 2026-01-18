@@ -6,11 +6,21 @@
 #include "MqttDevice.hpp"
 #include "PersistentSettings.hpp"
 
+typedef enum {
+    AP_MODE,
+    DEACTIVATED,
+    DISCONNECTED,
+    WIFI_CONNECTED,
+    WIFI_MQTT_CONNECTED,
+} Connectionstate;
+
+
 class ConnectionManager {
 private:
     WifiManager wifi_manager;
     PubSubClient* mqtt_client;
     MqttDevice* mqtt_device;
+    Connectionstate state = DISCONNECTED;
     bool connection_tested = false;
     bool connection_changed = false;
     bool ap_mode = false;
@@ -25,6 +35,7 @@ private:
     char mqtt_device_name[64];
     char mqtt_device_id[64];
     void load_persistent_settings();
+    void set_state();
     
 public:
   ConnectionManager();
@@ -34,6 +45,7 @@ public:
   void restart_in_ap_mode();
   bool get_wifi_connected();
   void print_status();
+  Connectionstate get_state();
 };
 
 #endif

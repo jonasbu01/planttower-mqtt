@@ -6,15 +6,17 @@ WifiManager::WifiManager() :
     server(80)
     {}
 
-void WifiManager::setup_wifi() {
+void WifiManager::setup_wifi(const char* ssid, const char* password) {
     WiFi.setSleep(false);
+    strcpy(this->wifi_ssid, ssid);
+    strcpy(this->wifi_password, password);
 }
 
 void WifiManager::connection_loop() {
     if (WiFi.status() != WL_CONNECTED && (millis() - this->last_reconnect_attempt) > 3000) {
-        Serial.printf("WiFi disconnected, try connecting to %s...\n", ssid);
+        Serial.printf("WiFi disconnected, try connecting to %s...\n", this->wifi_ssid);
         delay(10);
-        WiFi.begin(ssid, password);
+        WiFi.begin(this->wifi_ssid, this->wifi_password);
         last_reconnect_attempt = millis();
     }
     this->previous_connection_status = this->connected;
