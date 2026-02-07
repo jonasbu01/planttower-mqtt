@@ -86,6 +86,16 @@ int64_t Pump::get_duration_until_change_s(){
     }
 }
 
+void Pump::toggle_enabled() {
+    if (this->enabled) {
+        this->mqtt_pump_enable_switch->switch_off();
+        this->enabled = false;
+    } else {
+        this->mqtt_pump_enable_switch->switch_on();
+        this->enabled = true;
+    }
+}
+
 bool Pump::get_enabled() {
     return this->enabled;
 }

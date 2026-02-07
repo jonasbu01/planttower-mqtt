@@ -61,7 +61,7 @@ void LedDisplay::display_state(Pump *pump, DigitalInput *waterlevel_sensor, OneW
     
     //red led -> pump disabled / waterlevel / error state
     if (!pump->get_enabled()){
-        this->red_led.fade_logarithmic_to_percent(30, 10); //pump disabled
+        this->red_led.fade_logarithmic_to_percent(50, 10); //pump disabled
     }else{
         if (waterlevel_sensor->get_state()){
             this->red_led.fade_logarithmic_between_percentages(0, 100, 30, 10, 300, 200); //water level low

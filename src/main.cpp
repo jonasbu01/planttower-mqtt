@@ -73,7 +73,7 @@ MqttSwitch* mqtt_pump_enable_switch = new MqttSwitch(
   Bools::PumpEnabled
 );
 
-MqttCredentials mqtt_credentials = {
+MqttCredentials mqtt_credentials = { //has to be configured after loading persistent settings in connection manager
   mqtt_server,
   mqtt_port,
   "mqtt_device",
@@ -83,9 +83,9 @@ MqttCredentials mqtt_credentials = {
 
 MqttDevice mqtt_device(
   mqtt_client,
-  &mqtt_credentials,
-  "plant_tower",
-  "Plant Tower",
+  &mqtt_credentials, //has to be configured after loading persistent settings in connection manager
+  "plant_tower", //has to be configured after loading persistent settings in connection manager
+  "Plant Tower", //has to be configured after loading persistent settings in connection manager
   "Jonas"
 );
 
@@ -96,6 +96,7 @@ OneWireTemperatureSensor *temperature_sensor = new OneWireTemperatureSensor(TEMP
 LedDisplay *led_display = new LedDisplay(GREEN_LED_PIN, RED_LED_PIN, BLUE_LED_PIN);
 DigitalInput *touch_button = new DigitalInput(TOUCH_PIN, true, false);
 DigitalInput *reset_connectivity_button = new DigitalInput(RESET_CONNECTIVITY_PIN, true, true);
+DigitalInput *pump_enable_button = new DigitalInput(PUMP_ENABLE_PIN, true, true);
 
 //Timing variables
 uint64_t time_serial_print_interval = 0;
@@ -122,14 +123,25 @@ void setup() {
 
 void loop() {
   connection_manager.loop();
+
+  //buttons
+  //toggle pump by touch button
+  touch_button->refresh_state();
+  if(touch_button->rising_edge()){
+    pump->toggle();
+  }
   //reset connectivity button
   reset_connectivity_button->refresh_state();
-  if(reset_connectivity_button->get_state() && reset_connectivity_button->get_duration_ms_state_changed() > 3000){ // hold for 3s
+  if(reset_connectivity_button->get_state() && reset_connectivity_button->get_duration_ms_state_changed() > 5000){ // hold for 5s
     connection_manager.restart_in_ap_mode();
+  }
+  //enable/disable pump
+  pump_enable_button->refresh_state();
+  if(pump_enable_button->falling_edge()){
+    pump->toggle_enabled();
   }
 
   //refresh hardware components
-  touch_button->refresh_state();
   temperature_sensor->request_value_by_interval(15);
   pump->run_interval_cycle(temperature_sensor, 60, 2400); //1 min = 60 s on / 40 min = 2400 s off (below 20 °C)
   if (pump->get_enabled() && !pump->get_state() && pump->get_time_switched_off() + 60000 <= millis()){ //measure only when pump is >60s off and enabled
@@ -151,7 +163,7 @@ void loop() {
     Serial.printf("Pump state: %s (in %" PRId64 " s %s)\n", pump->get_state() ? "on" : "off", pump->get_duration_until_change_s(), pump->get_state() ? "off" : "on");
     Serial.println(waterlevel_sensor->get_state()? "Water-Level: low" : "Water-Level: ok");
     Serial.println(temperature_sensor->get_error() ? "Air temp.: Error, no connection?" : String("Air temp.: ") + temperature_sensor->get_temperature() + " °C");
-    //Serial.println(touch_button->get_state() ? "Button: pressed" : "Button: not pressed");
+    Serial.println(touch_button->get_state() ? "Button: pressed" : "Button: not pressed");
     connection_manager.print_status();
     time_serial_print_interval = millis() + 1000;
   }

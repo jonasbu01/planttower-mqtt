@@ -2,13 +2,18 @@
 #define HARDWAREPINCONFIG
 
 //Pins ESP32 WROOM
-#define PUMP_PIN 27
-#define WATERLEVEL_PIN 25
+#define PUMP_PIN 13
+#define WATERLEVEL_PIN 22
 #define TEMPERATURE_PIN 23
-#define TOUCH_PIN 14
-#define RED_LED_PIN 26 
+#define RED_LED_PIN 26
+#define GREEN_LED_PIN 25
 #define BLUE_LED_PIN 33
-#define GREEN_LED_PIN 32
-#define RESET_CONNECTIVITY_PIN 0 //Boot Button as test
+#define TOUCH_PIN 21
+#define PUMP_ENABLE_PIN 18
+#define RESET_CONNECTIVITY_PIN 19
+
+//not implemented yet
+#define OPTIONAL_FET_OUT_PIN 27
+#define OPTIONAL_IO_PIN 32
 
 #endif

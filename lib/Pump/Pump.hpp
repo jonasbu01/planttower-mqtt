@@ -20,6 +20,7 @@ public:
     int64_t get_duration_until_on_s();
     int64_t get_duration_until_off_s();
     int64_t get_duration_until_change_s();
+    void toggle_enabled();
     bool get_enabled();
 };
 
