@@ -44,6 +44,15 @@ MqttSensor* mqtt_temperature_sensor = new MqttSensor(
   "{{ value_json.temperature }}"
 );
 
+MqttSensor* mqtt_valid_temperature_sensor = new MqttSensor(
+  mqtt_client,
+  "valid_temperature",
+  "Temperatur ohne Fehler",
+  "temperature",
+  "°C",
+  "{{ value_json.temperature }}"
+);
+
 MqttBinarySensor* mqtt_waterlevel_sensor = new MqttBinarySensor(
   mqtt_client,
   "water_level_low",
@@ -110,6 +119,7 @@ void setup() {
   mqtt_device.configure_client();
   mqtt_device.register_component(mqtt_next_pump_change_sensor)
     ->register_component(mqtt_temperature_sensor)
+    ->register_component(mqtt_valid_temperature_sensor)
     ->register_component(mqtt_waterlevel_sensor)
     ->register_component(mqtt_pump_switch)
     ->register_component(mqtt_pump_enable_switch);
@@ -128,7 +138,7 @@ void loop() {
   //toggle pump by touch button
   touch_button->refresh_state();
   if(touch_button->rising_edge()){
-    pump->toggle();
+    //pump->toggle(); //Hotfix - leave in wind triggered button
   }
   //reset connectivity button
   reset_connectivity_button->refresh_state();
@@ -153,6 +163,7 @@ void loop() {
   if (time_mqtt_sensor_refresh_interval < millis() && mqtt_device.is_connected()) {
     mqtt_next_pump_change_sensor->set_state((pump->get_duration_until_change_s()/5)*5);//rounded to 5s
     mqtt_temperature_sensor->set_state(temperature_sensor->get_temperature());
+    mqtt_valid_temperature_sensor->set_state(temperature_sensor->get_last_valid_temperature());
     mqtt_waterlevel_sensor->set_state(waterlevel_sensor->get_state() ? MqttBinarySensor::ON_STATE : MqttBinarySensor::OFF_STATE);
     time_mqtt_sensor_refresh_interval = millis() + 500; //every 0.5s
   }

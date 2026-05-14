@@ -6,15 +6,23 @@ OneWireTemperatureSensor::OneWireTemperatureSensor(u_int8_t pin)
 }
 
 void OneWireTemperatureSensor::request_value(){
+    //request
     this->sensor.requestTemperatures();
     float sensor_value = this->sensor.getTempCByIndex(0);
     this->time_last_request = millis();
-    if (sensor_value > 70.0 || sensor_value < -30.0){
-        this->error = true;
+    this->temperature = sensor_value;
+    //check if valid
+    if (sensor_value > 70.0 || sensor_value < -30.0 || sensor_value == 0.0){
         this->sensor.begin();
     }else{
+        this->valid_temperature = sensor_value;
+        this->time_last_valid_temperature = this->time_last_request;
+    }
+    //error if no valid temperature for more than DURATION_VALID_TEMPERATUR_S
+    if (this->time_last_valid_temperature + this->DURATION_VALID_TEMPERATUR_S * 1000 < this->time_last_request){
+        this->error = true;
+    }else{
         this->error = false;
-        this->temperature = sensor_value;
     }
 }
 
@@ -26,6 +34,10 @@ void OneWireTemperatureSensor::request_value_by_interval(u_int16_t interval_s){
 
 float OneWireTemperatureSensor::get_temperature(){
     return this->temperature;
+}
+
+float OneWireTemperatureSensor::get_last_valid_temperature(){
+    return this->valid_temperature;
 }
 
 bool OneWireTemperatureSensor::get_error(){

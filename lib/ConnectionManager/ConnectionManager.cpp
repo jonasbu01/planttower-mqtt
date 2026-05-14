@@ -13,6 +13,15 @@ void ConnectionManager::init() {
     }
 }
 
+void ConnectionManager::init_ota() {
+    ArduinoOTA.setHostname("esp32");
+    ArduinoOTA.onError([](ota_error_t error) {
+        Serial.printf("OTA Error[%u]\n", error);
+    });
+    ArduinoOTA.begin();
+    Serial.println("OTA: ready");
+}
+
 void ConnectionManager::set_mqtt_device(PubSubClient* client, MqttDevice* device) {
     this->mqtt_client = client;
     this->mqtt_device = device;
@@ -81,8 +90,17 @@ void ConnectionManager::loop() {
         }
     }else if(this->state != DEACTIVATED){
         //normal mode / testing
+        //ArduinoOTA.handle();
         //WIFI
         this->wifi_manager.connection_loop();
+        //OTA
+        if (!this->ota_initialized && this->wifi_manager.is_connected()) {
+            this->init_ota();
+            this->ota_initialized = true;
+        }
+        if (this->ota_initialized) {
+            ArduinoOTA.handle();
+        }
         //MQTT
         if (!this->mqtt_device->is_connected() && this->wifi_manager.is_connected()) { 
             this->mqtt_device->connect_client();

@@ -1,6 +1,7 @@
 #ifndef CONNECTION_MANAGER
 #define CONNECTION_MANAGER
 
+#include <ArduinoOTA.h>
 #include "WifiManager.hpp"
 #include <PubSubClient.h>
 #include "MqttDevice.hpp"
@@ -34,8 +35,10 @@ private:
     char mqtt_password[64];
     char mqtt_device_name[64];
     char mqtt_device_id[64];
+    bool ota_initialized = false;
     void load_persistent_settings();
     void set_state();
+    void init_ota();
     
 public:
   ConnectionManager();

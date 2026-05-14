@@ -30,12 +30,10 @@ Pump::Pump(uint8_t pump_pin, MqttSwitch* mqtt_pump_enable_switch, MqttSwitch* mq
     }
 
 void Pump::run_interval_cycle(OneWireTemperatureSensor *temperature_sensor, uint64_t on_duration_s, uint64_t off_duration_below_20C_s) {
-    if ((temperature_sensor->get_temperature() < 3.0 && !temperature_sensor->get_error()) || !this->enabled){ //ice preventation / pump disabled
+    if (!this->enabled){ // pump disabled
         if (this->get_state()){
             this->mqtt_pump_switch->switch_off();
         }
-        this->duration_until_on_s = 0;
-        this->duration_until_off_s = 0;
     } else { 
         if (!this->get_state()) { //off -> switch on
             float off_duration_s = this->calculate_off_duration(temperature_sensor, off_duration_below_20C_s);
@@ -56,14 +54,15 @@ void Pump::run_interval_cycle(OneWireTemperatureSensor *temperature_sensor, uint
 }
 
 uint64_t Pump::calculate_off_duration(OneWireTemperatureSensor *temperature_sensor, uint64_t off_duration_below_20C_s){
-    if (temperature_sensor->get_error() || temperature_sensor->get_temperature() <= 20.0){
+    float temperature = temperature_sensor->get_last_valid_temperature();
+    if (temperature_sensor->get_error() || temperature <= 20.0){
         return off_duration_below_20C_s;
     }else{
-        uint8_t kelvin_over_20C = (int(temperature_sensor->get_temperature()) - 20);
+        uint8_t kelvin_over_20C = (int(temperature) - 20);
         //float factor = 1 - (1 - 0.3)/15 * kelvin_over_20C; //@15 K (40°C) -> 0.3 * off_duration_25C_s
         float factor = 1 - 0.9 * pow(kelvin_over_20C / 15.0, 2) - kelvin_over_20C * 0.01;
-        if (factor < 0.1){
-            factor = 0.1; //higher temp. than 34°C -> 4 min
+        if (factor < 0.15){
+            factor = 0.15; //min time 6 min
         }
         uint64_t warm_temperature_off_duration = off_duration_below_20C_s * factor;
         return warm_temperature_off_duration;
