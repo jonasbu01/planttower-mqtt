@@ -8,7 +8,7 @@ void ConnectionManager::init() {
         this->wifi_manager.ap_mode_start();
         bool_settings.setValue(Bools::APMode, false); //for next restart
     }else{
-        this->wifi_manager.setup_wifi(this->wifi_ssid, this->wifi_password);
+        this->wifi_manager.setup_wifi(this->wifi_ssid, this->wifi_password, this->mqtt_device_name);
         //setup mqtt client secrets
     }
 }

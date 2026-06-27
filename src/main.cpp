@@ -138,7 +138,7 @@ void loop() {
   //toggle pump by touch button
   touch_button->refresh_state();
   if(touch_button->rising_edge()){
-    //pump->toggle(); //Hotfix - leave in wind triggered button
+    //pump->toggle(); //Hotfix - leaf in wind triggered button
   }
   //reset connectivity button
   reset_connectivity_button->refresh_state();

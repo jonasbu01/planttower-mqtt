@@ -6,10 +6,24 @@ WifiManager::WifiManager() :
     server(80)
     {}
 
-void WifiManager::setup_wifi(const char* ssid, const char* password) {
-    WiFi.setSleep(false);
+void WifiManager::setup_wifi(const char* ssid, const char* password, const char* device_name) {
     strcpy(this->wifi_ssid, ssid);
     strcpy(this->wifi_password, password);
+    strcpy(this->device_name, device_name);
+
+    WiFi.disconnect(true);
+    WiFi.mode(WIFI_OFF);
+    delay(100);
+    WiFi.mode(WIFI_STA);
+    WiFi.setSleep(false);
+    WiFi.setHostname(this->device_name); //does not work currently
+
+    // Zusätzlich über ESP-IDF API setzen
+    esp_netif_t* netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+    if (netif) {
+        esp_netif_set_hostname(netif, this->device_name);
+    }
+    
 }
 
 void WifiManager::connection_loop() {

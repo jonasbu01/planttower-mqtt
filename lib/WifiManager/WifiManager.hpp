@@ -2,6 +2,7 @@
 #define WIFIMANAGER
 
 #include <WiFi.h>
+#include "esp_netif.h"
 #include <WebServer.h>
 #include <DNSServer.h>
 #include "HTMLPages.hpp"
@@ -16,6 +17,7 @@ private:
     const char* AP_PASS = "12345678";
     char wifi_ssid[64];
     char wifi_password[64];
+    char device_name[64];
     IPAddress apIP;
     IPAddress netMsk;
     DNSServer dnsServer;
@@ -26,7 +28,7 @@ private:
     void ap_handle_captive_portal();
 public:
   WifiManager();
-  void setup_wifi(const char* ssid, const char* password);
+  void setup_wifi(const char* ssid, const char* password, const char* device_name);
   void connection_loop();
   void ap_mode_start();
   void ap_mode_loop();
