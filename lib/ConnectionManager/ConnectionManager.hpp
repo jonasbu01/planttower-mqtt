@@ -49,6 +49,7 @@ public:
   bool get_wifi_connected();
   void print_status();
   Connectionstate get_state();
+  MqttConfig* get_mqtt_config();
 };
 
 #endif

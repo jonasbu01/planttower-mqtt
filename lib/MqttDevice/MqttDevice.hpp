@@ -11,25 +11,28 @@
 #include "MqttSensor.hpp"
 #include "MqttBinarySensor.hpp"
 
-struct MqttCredentials {
+struct MqttConfig {
+  const char* unique_id;
+  const char* name;
+  const char* manufacturer;
   const char* server;
   const int port;
   const char* client_id;
   const char* user;
   const char* password;
+
+  MqttConfig(const char* unique_id, const char* name, const char* manufacturer, const char* server, const int port, const char* client_id, const char* user, const char* password):
+    unique_id(unique_id), name(name), manufacturer(manufacturer), server(server), port(port), client_id(client_id), user(user), password(password) {}
 };
 
 class MqttDevice : public MqttEntity {
  public:
   MqttDevice(
     PubSubClient* mqtt_client,
-    MqttCredentials* mqtt_credentials,
-    const char* unique_id,
-    const char* name,
-    const char* manufacturer
-  ): MqttEntity(mqtt_client, unique_id, name, "device"),
-    mqtt_credentials(mqtt_credentials),
-    manufacturer(manufacturer) {
+    MqttConfig* mqtt_config
+  ): MqttEntity(mqtt_client, mqtt_config->unique_id, mqtt_config->name, "device"),
+    manufacturer(mqtt_config->manufacturer),
+    mqtt_config(mqtt_config) {
       snprintf(this->discovery_topic, 256, "homeassistant/%s/%s/config", this->platform, unique_id);
     }
 
@@ -49,7 +52,7 @@ class MqttDevice : public MqttEntity {
   }
 
  private:
-  MqttCredentials* mqtt_credentials;
+  MqttConfig* mqtt_config;
   const char* manufacturer;
   char discovery_topic[256];
   std::map<std::string, MqttComponent*>* components_registry = new std::map<std::string, MqttComponent*>();

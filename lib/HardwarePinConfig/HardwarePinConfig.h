@@ -10,7 +10,7 @@
 #define BLUE_LED_PIN 33
 #define TOUCH_PIN 21
 #define PUMP_ENABLE_PIN 18
-#define RESET_CONNECTIVITY_PIN 19
+#define RESET_CONNECTIVITY_PIN 0 //19
 
 //not implemented yet
 #define OPTIONAL_FET_OUT_PIN 27

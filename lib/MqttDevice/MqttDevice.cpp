@@ -3,7 +3,7 @@
 void MqttDevice::configure_client() {
   this->mqtt_client->setBufferSize(2048);
   this->mqtt_client->setKeepAlive(60);
-  this->mqtt_client->setServer(this->mqtt_credentials->server, this->mqtt_credentials->port);
+  this->mqtt_client->setServer(this->mqtt_config->server, this->mqtt_config->port);
   this->mqtt_client->setCallback([this](char* topic, byte* payload, unsigned int length) {
     this->dispatch_message(topic, payload, length);
   });
@@ -11,11 +11,11 @@ void MqttDevice::configure_client() {
 
 void MqttDevice::connect_client() {
   if (!mqtt_client->connected() && (millis() - this->last_connection_attempt) > 3000) {
-    Serial.print("Attempting MQTT connection...");
+    Serial.println("Attempting MQTT connection...");
     if (mqtt_client->connect(
-      this->mqtt_credentials->client_id,
-      this->mqtt_credentials->user,
-      this->mqtt_credentials->password
+      this->mqtt_config->client_id,
+      this->mqtt_config->user,
+      this->mqtt_config->password
     )) {
       Serial.println("connected");
       if (!this->discovery_sent){
@@ -43,6 +43,7 @@ boolean MqttDevice::is_connected() {
 }
 
 MqttDevice* MqttDevice::register_component(MqttComponent* component) {
+  Serial.printf("Registering component: %s\n", component->get_state_topic());
   this->components_registry->insert(
     std::make_pair(component->get_state_topic(), component)
   );

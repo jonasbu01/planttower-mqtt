@@ -7,9 +7,8 @@ void ConnectionManager::init() {
     if (this->ap_mode) {
         this->wifi_manager.ap_mode_start();
         bool_settings.setValue(Bools::APMode, false); //for next restart
-    }else{
+    } else {
         this->wifi_manager.setup_wifi(this->wifi_ssid, this->wifi_password, this->mqtt_device_name);
-        //setup mqtt client secrets
     }
 }
 
@@ -88,7 +87,7 @@ void ConnectionManager::loop() {
             Serial.println("AP-Mode Timeout reached. Restart...");
             ESP.restart();
         }
-    }else if(this->state != DEACTIVATED){
+    } else if (this->state != DEACTIVATED) {
         //normal mode / testing
         //ArduinoOTA.handle();
         //WIFI
@@ -153,4 +152,18 @@ void ConnectionManager::print_status() {
         this->wifi_manager.print_wifi_quality();
         Serial.println(mqtt_device->is_connected() ? "MQTT-Broker: connected" : "MQTT-Broker: not connected");
     }
+}
+
+MqttConfig* ConnectionManager::get_mqtt_config() {
+    MqttConfig* mqtt_config = new MqttConfig(
+        this->mqtt_device_id,
+        this->mqtt_device_name,
+        "Jonas",
+        this->mqtt_server,
+        this->mqtt_port,
+        this->mqtt_device_id,
+        this->mqtt_user,
+        this->mqtt_password
+    );
+    return mqtt_config;
 }

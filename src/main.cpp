@@ -2,15 +2,15 @@
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include <vector>
-//Connection
+// Connection
 #include "ConnectionManager.hpp"
-//MQTT
+// MQTT
 #include "MqttDevice.hpp"
 #include "MqttComponent.hpp"
 #include "MqttSensor.hpp"
 #include "MqttBinarySensor.hpp"
 #include "MqttSwitch.hpp"
-//Hardware Components
+// Hardware Components
 #include "HardwarePinConfig.h"
 #include "DigitalInput.hpp"
 #include "AnalogInput.hpp"
@@ -23,91 +23,26 @@
 
 ConnectionManager connection_manager;
 WiFiClient wifi_client;
-PubSubClient* mqtt_client = new PubSubClient(wifi_client);
+PubSubClient* mqtt_client = nullptr;
 
-//MQTT Components
-MqttSensor* mqtt_next_pump_change_sensor = new MqttSensor(
-  mqtt_client,
-  "duration_next_pump_change_s",
-  "Nächte Pumpenumschaltung",
-  "duration",
-  "s",
-  "{{ value_json.duration }}"
-);
+// MQTT Components
+MqttSensor* mqtt_next_pump_change_sensor = nullptr;
+MqttSensor* mqtt_temperature_sensor = nullptr;
+MqttBinarySensor* mqtt_waterlevel_sensor = nullptr;
+MqttSwitch* mqtt_pump_switch = nullptr;
+MqttSwitch* mqtt_pump_enable_switch = nullptr;
+MqttDevice* mqtt_device = nullptr;
 
-MqttSensor* mqtt_temperature_sensor = new MqttSensor(
-  mqtt_client,
-  "temperature",
-  "Temperatur",
-  "temperature",
-  "°C",
-  "{{ value_json.temperature }}"
-);
+// Objects for hardware components
+Pump *pump = nullptr;
+DigitalInput *waterlevel_sensor = nullptr;
+OneWireTemperatureSensor *temperature_sensor = nullptr;
+LedDisplay *led_display = nullptr;
+DigitalInput *touch_button = nullptr;
+DigitalInput *reset_connectivity_button = nullptr;
+DigitalInput *pump_enable_button = nullptr;
 
-MqttSensor* mqtt_valid_temperature_sensor = new MqttSensor(
-  mqtt_client,
-  "valid_temperature",
-  "Temperatur ohne Fehler",
-  "temperature",
-  "°C",
-  "{{ value_json.temperature }}"
-);
-
-MqttBinarySensor* mqtt_waterlevel_sensor = new MqttBinarySensor(
-  mqtt_client,
-  "water_level_low",
-  "Wasserstand gering",
-  "{{ value_json.state }}",
-  new std::map<std::string, std::string>{
-    {"icon", "mdi:water-alert"}
-  }
-);
-
-MqttSwitch* mqtt_pump_switch = new MqttSwitch(
-  mqtt_client,
-  "pump",
-  "Pumpe",
-  new std::map<std::string, std::string>{
-    {"icon", "mdi:pump"}
-  }
-);
-
-MqttSwitch* mqtt_pump_enable_switch = new MqttSwitch(
-  mqtt_client,
-  "pump_enable",
-  "Freigabe Pumpe",
-  new std::map<std::string, std::string>{
-    {"icon", "mdi:power"}
-  },
-  Bools::PumpEnabled
-);
-
-MqttCredentials mqtt_credentials = { //has to be configured after loading persistent settings in connection manager
-  mqtt_server,
-  mqtt_port,
-  "mqtt_device",
-  mqtt_user,
-  mqtt_pass
-};
-
-MqttDevice mqtt_device(
-  mqtt_client,
-  &mqtt_credentials, //has to be configured after loading persistent settings in connection manager
-  "plant_tower", //has to be configured after loading persistent settings in connection manager
-  "Plant Tower", //has to be configured after loading persistent settings in connection manager
-  "Jonas"
-);
-
-//Objects for hardware components
-Pump *pump = new Pump(PUMP_PIN, mqtt_pump_enable_switch, mqtt_pump_switch);
-DigitalInput *waterlevel_sensor = new DigitalInput(WATERLEVEL_PIN, true, true);
-OneWireTemperatureSensor *temperature_sensor = new OneWireTemperatureSensor(TEMPERATURE_PIN);
-LedDisplay *led_display = new LedDisplay(GREEN_LED_PIN, RED_LED_PIN, BLUE_LED_PIN);
-DigitalInput *touch_button = new DigitalInput(TOUCH_PIN, true, false);
-DigitalInput *reset_connectivity_button = new DigitalInput(RESET_CONNECTIVITY_PIN, true, true);
-DigitalInput *pump_enable_button = new DigitalInput(PUMP_ENABLE_PIN, true, true);
-
-//Timing variables
+// Timing variables
 uint64_t time_serial_print_interval = 0;
 uint64_t time_mqtt_sensor_refresh_interval = 0;
 
@@ -115,20 +50,75 @@ void setup() {
   nvs.begin("esp32");
   Serial.begin(115200);
   delay(10);
+
   connection_manager.init();
-  mqtt_device.configure_client();
-  mqtt_device.register_component(mqtt_next_pump_change_sensor)
+  MqttConfig* mqtt_config = connection_manager.get_mqtt_config();
+
+  mqtt_client = new PubSubClient(wifi_client);
+  mqtt_next_pump_change_sensor = new MqttSensor(
+    mqtt_client,
+    (String(mqtt_config->unique_id) + "_duration_next_pump_change_s").c_str(),
+    "Nächte Pumpenumschaltung",
+    "duration",
+    "s",
+    "{{ value_json.duration }}"
+  );
+  mqtt_temperature_sensor = new MqttSensor(
+    mqtt_client,
+    (String(mqtt_config->unique_id) + "_temperature").c_str(),
+    "Temperatur",
+    "temperature",
+    "°C",
+    "{{ value_json.temperature }}"
+  );
+  mqtt_waterlevel_sensor = new MqttBinarySensor(
+    mqtt_client,
+    (String(mqtt_config->unique_id) + "_water_level_low").c_str(),
+    "Wasserstand gering",
+    "{{ value_json.state }}",
+    new std::map<std::string, std::string>{
+      {"icon", "mdi:water-alert"}
+    }
+  );
+  mqtt_pump_switch = new MqttSwitch(
+    mqtt_client,
+    (String(mqtt_config->unique_id) + "_pump").c_str(),
+    "Pumpe",
+    new std::map<std::string, std::string>{
+      {"icon", "mdi:pump"}
+    }
+  );
+  mqtt_pump_enable_switch = new MqttSwitch(
+    mqtt_client,
+    (String(mqtt_config->unique_id) + "_pump_enable").c_str(),
+    "Freigabe Pumpe",
+    new std::map<std::string, std::string>{
+      {"icon", "mdi:power"}
+    },
+    Bools::PumpEnabled
+  );
+  mqtt_device = new MqttDevice(mqtt_client, mqtt_config);
+
+  pump = new Pump(PUMP_PIN, mqtt_pump_enable_switch, mqtt_pump_switch);
+  waterlevel_sensor = new DigitalInput(WATERLEVEL_PIN, true, true);
+  temperature_sensor = new OneWireTemperatureSensor(TEMPERATURE_PIN);
+  led_display = new LedDisplay(GREEN_LED_PIN, RED_LED_PIN, BLUE_LED_PIN);
+  touch_button = new DigitalInput(TOUCH_PIN, true, false);
+  reset_connectivity_button = new DigitalInput(RESET_CONNECTIVITY_PIN, true, true);
+  pump_enable_button = new DigitalInput(PUMP_ENABLE_PIN, true, true);
+
+  mqtt_device->configure_client();
+  mqtt_device->register_component(mqtt_next_pump_change_sensor)
     ->register_component(mqtt_temperature_sensor)
-    ->register_component(mqtt_valid_temperature_sensor)
     ->register_component(mqtt_waterlevel_sensor)
     ->register_component(mqtt_pump_switch)
     ->register_component(mqtt_pump_enable_switch);
-  mqtt_device.load_persistent_settings();
-  connection_manager.set_mqtt_device(mqtt_client, &mqtt_device);
+  mqtt_device->load_persistent_settings();
+  connection_manager.set_mqtt_device(mqtt_client, mqtt_device);
   temperature_sensor->request_value();
-  
-  while(!led_display->run_startup_animation()); //wait 2-3s until animation done
-  mqtt_pump_switch->switch_on(); //initial state at startup (if pump enabled)
+
+  while(!led_display->run_startup_animation()); // wait 2-3s until animation done
+  mqtt_pump_switch->switch_on(); // initial state at startup (if pump enabled)
 }
 
 void loop() {
@@ -160,10 +150,9 @@ void loop() {
   led_display->display_state(pump, waterlevel_sensor, temperature_sensor, connection_manager.get_state());
 
   //refresh mqtt sensors (state will only be sent if value changed)
-  if (time_mqtt_sensor_refresh_interval < millis() && mqtt_device.is_connected()) {
+  if (time_mqtt_sensor_refresh_interval < millis() && mqtt_device->is_connected()) {
     mqtt_next_pump_change_sensor->set_state((pump->get_duration_until_change_s()/5)*5);//rounded to 5s
     mqtt_temperature_sensor->set_state(temperature_sensor->get_temperature());
-    mqtt_valid_temperature_sensor->set_state(temperature_sensor->get_last_valid_temperature());
     mqtt_waterlevel_sensor->set_state(waterlevel_sensor->get_state() ? MqttBinarySensor::ON_STATE : MqttBinarySensor::OFF_STATE);
     time_mqtt_sensor_refresh_interval = millis() + 500; //every 0.5s
   }

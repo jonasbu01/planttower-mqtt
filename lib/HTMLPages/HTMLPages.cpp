@@ -52,8 +52,10 @@ const char* html_setup_page = R"rawliteral(
 
         <script>
             function toggle(id) {
-            var f = document.getElementById(id);
-            f.type = (f.type === "password") ? "text" : "password";
+                var field = document.getElementById(id);
+                if (field) {
+                    field.type = (field.type === "password") ? "text" : "password";
+                }
             }
         </script>
     </head>
@@ -74,9 +76,9 @@ const char* html_setup_page = R"rawliteral(
             <input name="mqtt_server" placeholder="MQTT Server (IP oder Hostname)" required>
             <input name="mqtt_port" type="number" value="1883" placeholder="MQTT Port">
             <input name="mqtt_user" placeholder="MQTT Benutzer">
-            <input id="mqtt_password" name="mqtt_pass" type="password" placeholder="MQTT Passwort">
+            <input id="mqtt_password" name="mqtt_password" type="password" placeholder="MQTT Passwort">
             <div class="checkbox-inline">
-                <input type="checkbox" onclick="toggle('mqtt_pass')">
+                <input type="checkbox" onclick="toggle('mqtt_password')">
                 Passwort anzeigen
             </div>
 
