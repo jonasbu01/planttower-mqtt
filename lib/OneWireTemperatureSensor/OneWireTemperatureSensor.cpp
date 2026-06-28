@@ -33,10 +33,6 @@ void OneWireTemperatureSensor::request_value_by_interval(u_int16_t interval_s){
 }
 
 float OneWireTemperatureSensor::get_temperature(){
-    return this->temperature;
-}
-
-float OneWireTemperatureSensor::get_last_valid_temperature(){
     return this->valid_temperature;
 }
 

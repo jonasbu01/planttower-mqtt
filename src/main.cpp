@@ -18,9 +18,6 @@
 #include "Pump.hpp"
 #include "LedDisplay.hpp"
 
-#include "Secrets.hpp"
-
-
 ConnectionManager connection_manager;
 WiFiClient wifi_client;
 PubSubClient* mqtt_client = nullptr;

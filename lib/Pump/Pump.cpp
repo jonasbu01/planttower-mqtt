@@ -54,7 +54,7 @@ void Pump::run_interval_cycle(OneWireTemperatureSensor *temperature_sensor, uint
 }
 
 uint64_t Pump::calculate_off_duration(OneWireTemperatureSensor *temperature_sensor, uint64_t off_duration_below_20C_s){
-    float temperature = temperature_sensor->get_last_valid_temperature();
+    float temperature = temperature_sensor->get_temperature();
     if (temperature_sensor->get_error() || temperature <= 20.0){
         return off_duration_below_20C_s;
     }else{
