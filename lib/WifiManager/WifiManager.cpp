@@ -15,7 +15,7 @@ void WifiManager::setup_wifi(const char* ssid, const char* password, const char*
     WiFi.mode(WIFI_OFF);
     delay(100);
     WiFi.mode(WIFI_STA);
-    WiFi.setSleep(false);
+    WiFi.setSleep(true);
     WiFi.setHostname(this->device_name); //does not work currently
 
     // Zusätzlich über ESP-IDF API setzen
